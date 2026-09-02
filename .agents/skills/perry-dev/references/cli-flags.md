@@ -1,0 +1,428 @@
+<!-- Perry docs bundle: cli-flags.md -->
+<!-- Canonical online source: https://docs.perryts.com/ -->
+
+<!-- source: docs/src/cli/flags.md -->
+
+# Compiler Flags
+
+Reference for the public `perry compile` flags plus Perry's global flags. The
+installed binary remains authoritative for feature-gated commands; use
+`perry --help` and `perry <command> --help` to inspect that exact build.
+
+## Global Flags
+
+Available on all commands:
+
+| Flag | Description |
+|------|-------------|
+| `--format text\|json` | Output format (default: `text`) |
+| `-v, --verbose` | Increase verbosity (repeatable: `-v`, `-vv`, `-vvv`) |
+| `-q, --quiet` | Suppress non-error output |
+| `--no-color` | Disable ANSI color codes |
+
+Successful compilation keeps Cargo, clang, Swift, and linker implementation
+details out of the default output. Pass `--verbose` to stream those toolchain
+diagnostics; if an internal tool fails, Perry shows its captured output even
+without `--verbose`.
+
+## Compilation Targets
+
+Use `--target` to cross-compile:
+
+| Target | Platform | Notes |
+|--------|----------|-------|
+| *(none)* | Current platform | Default behavior |
+| `ios-simulator` | iOS Simulator | ARM64 simulator binary |
+| `ios` | iOS Device | ARM64 device binary |
+| `visionos-simulator` | visionOS Simulator | Apple Vision Pro simulator build |
+| `visionos` | visionOS Device | Apple Vision Pro device build |
+| `macos` | macOS | Native macOS app bundle/build |
+| `tvos` | tvOS Device | ARM64 Apple TV app |
+| `tvos-simulator` | tvOS Simulator | Apple TV simulator app |
+| `watchos` | watchOS Device | Apple Watch app |
+| `watchos-simulator` | watchOS Simulator | Apple Watch simulator app |
+| `android` | Android | ARM64 device build |
+| `android-x86_64` | Android | x86_64 emulator/device build |
+| `ios-widget` | iOS Widget | WidgetKit extension (requires `--app-bundle-id`) |
+| `ios-widget-simulator` | iOS Widget (Sim) | Widget for simulator |
+| `watchos-widget` | watchOS Complication | WidgetKit extension for Apple Watch |
+| `watchos-widget-simulator` | watchOS Widget (Sim) | Widget for watchOS simulator |
+| `android-widget` | Android Widget | Android App Widget (AppWidgetProvider) |
+| `wearos-tile` | Wear OS Tile | Wear OS Tile (TileService) |
+| `wearos` | Wear OS App | ARM64 Wear OS application shared library |
+| `harmonyos` | HarmonyOS NEXT | ARM64 OHOS HAP/native library |
+| `harmonyos-simulator` | HarmonyOS Simulator | x86_64 OHOS simulator output |
+| `wasm` | WebAssembly | Self-contained HTML with WASM or raw `.wasm` binary |
+| `web` | Web | Outputs HTML file with JS |
+| `windows` | Windows | Win32/GDI executable for the native Windows host architecture; x64 when cross-compiling from another OS |
+| `windows-x86_64` | Windows x64 | Explicit x64 MSVC target |
+| `windows-aarch64` | Windows ARM64 | Explicit ARM64 MSVC target (`windows-arm64` is accepted as an alias) |
+| `windows-winui` | Windows (Fluent) | Opt-in WinUI 3 / Fluent backend for core Perry controls. Requires the Windows App SDK 2.0 runtime; see [Windows](https://docs.perryts.com/platforms/windows.html#winui-3-fluent-target). |
+| `linux` | Linux | GTK4 executable |
+| `linux-x86_64` | Linux x64 (glibc) | Explicit x86_64 GNU target |
+| `linux-aarch64` (`linux-arm64`) | Linux arm64 (glibc) | Explicit aarch64 GNU target |
+| `linux-musl` (`linux-x86_64-musl`) | Linux x64 (musl) | Fully static headless/server target |
+| `linux-aarch64-musl` | Linux arm64 (musl) | Fully static headless/server target |
+
+## Output Types
+
+Use `--output-type` to change what's produced:
+
+| Type | Description |
+|------|-------------|
+| `executable` | Standalone binary (default) |
+| `dylib` | Shared library (`.dylib`/`.so`) for [plugins](https://docs.perryts.com/plugins/overview.html) |
+| `staticlib` | Static archive (`.a`/`.lib`) exposing `perry_module_init` for a native host |
+
+## General Build and Platform Flags
+
+| Flag | Description |
+|---|---|
+| `-o, --output <PATH>` | Output executable, bundle, shared library, archive, or object path. |
+| `--libc glibc\|musl` | Select Linux libc/linkage; `musl` upgrades the corresponding Linux target to a fully static headless build. |
+| `--app-bundle-id <ID>` | Bundle identifier required by home-screen widget targets. |
+| `--bundle-extensions <DIR>` | Discover and statically bundle native extension packages from a directory. |
+| `--type-check` | Run the native TypeScript checker (`@typescript/native-preview`) before codegen. |
+| `--min-windows-version 7\|8\|10` | Set the Windows PE compatibility floor; ignored for non-Windows targets. |
+| `--windows-subsystem auto\|console\|windows` | Select the Windows PE subsystem instead of relying on import-based auto detection. |
+| `--skip-swift-build` | For Apple widget targets, emit SwiftUI source and metadata without invoking `swiftc`. |
+| `--p12-keystore <PATH>` / `--p12-password <VALUE>` | Select HarmonyOS HAP signing material. Prefer the corresponding environment/config sources for secrets. |
+| `--harmonyos-cert <PATH>` | HarmonyOS application certificate chain. |
+| `--harmonyos-profile <PATH>` | HarmonyOS signed provisioning profile. |
+| `--harmonyos-key-alias <NAME>` | HarmonyOS keystore alias; defaults to `debugKey`. |
+
+## Embedding Assets
+
+Bake static files (an SPA `dist/`, images, JSON, fonts, …) into the standalone
+executable so it runs with no external files on disk (#5731).
+
+| Flag | Description |
+|------|-------------|
+| `--embed <pattern>` | Embed a file, directory, or `*`/`**` glob (relative to the project root). Repeatable. Merged with `perry.embed` (package.json) and `[compile] embed` (perry.toml). |
+| `--asset-module <specifier=dir>` | Generate a virtual module whose default export maps every file below `dir` to a stable `$perryfs` handle. Repeatable; source maps are excluded. |
+
+```bash
+vite build
+perry compile server.ts --embed "./dist/**" -o myapp
+./myapp   # serves dist/ from memory — no dist/ folder needed
+```
+
+Embedded files are reachable at runtime three ways:
+
+```typescript,no-test
+import { embeddedFiles, readEmbedded, isStandaloneExecutable } from "perry";
+import { readFileSync } from "fs";
+
+for (const f of embeddedFiles()) {
+  // f.name (e.g. "dist/index.html"), f.size, f.type (MIME)
+  app.get("/" + f.name, (_, reply) => reply.type(f.type).send(readEmbedded(f.name)));
+}
+
+// or via node:fs at the `$perryfs/<path>` virtual path:
+const html = readFileSync("$perryfs/dist/index.html", "utf8");
+```
+
+`embeddedFiles()` is a function (not a bare value like Bun's `embeddedFiles`) so
+that array methods dispatch on its result. `readEmbedded(path)` and `node:fs`
+accept either the `$perryfs/<path>` virtual path or the embed-relative key.
+
+Bun-compatible file-loader imports embed the referenced binary automatically
+and bind the default import to its `$perryfs` path:
+
+```typescript,no-test
+import sound from "./sound.mp3" with { type: "file" };
+```
+
+Some build pipelines inject a generated module rather than writing it into the
+source checkout. Reproduce that file-map step with `--asset-module`. Perry
+sorts the directory walk, preserves each `{ type: "file" }` edge, and keeps the
+generated source in its cache rather than modifying the checkout.
+
+For the pinned OpenCode source graph, build the upstream web UI first, then
+compile from `packages/opencode`'s package root:
+
+```bash
+bun run --cwd packages/app build
+perry compile packages/opencode/src/index.ts \
+  --asset-module 'opencode-web-ui.gen.ts=../app/dist' \
+  -o opencode
+```
+
+The first command is the upstream preparation step; Perry reproduces only the
+deterministic `opencode-web-ui.gen.ts` file map. A missing/empty `dist` or a
+missing generated import fails with a remediation message instead of becoming
+an unresolved-import warning. Run the preparation command for every source
+revision so the generated inputs cannot be stale.
+
+Every compile also writes `<cache-dir>/assets.json`, a deterministic report of
+text, JSON, file-loader, WASM, and explicitly embedded assets. It records the
+packaged handle, project-relative source origin, byte size, SHA-256 digest, and
+the generating asset module where applicable.
+
+> **Note**
+> `node:fs` consults the embedded registry *before* disk, and a bare
+> embed-relative key matches too — so `readFileSync("dist/index.html")` returns
+> the **embedded** bytes even if a `dist/index.html` exists on disk next to the
+> binary. Read a real on-disk file by absolute path, and use the explicit
+> `$perryfs/<path>` form when you specifically mean the embedded copy.
+>
+> Embedding supports host builds on macOS, Linux, and Windows. Windows uses
+> LLVM clang to emit a COFF registration object; set `PERRY_LLVM_CLANG` when
+> the matching clang is not first on `PATH`. Cross-target embedding is not
+> currently supported.
+
+## Debug Flags
+
+| Flag | Description |
+|------|-------------|
+| `--print-hir` | Print HIR (intermediate representation) to stdout |
+| `--trace <STAGES>` | Dump IR at one or more pipeline stages. Comma-separated: `hir` (post-transform HIR), `llvm` (per-module `.ll` into `.perry-trace/llvm/`), or `all` |
+| `--focus <NAME>` | Restrict `--trace hir` to functions/methods/classes whose name contains `NAME`, suppressing import/export/init noise. Implies `--trace hir` if no stage is given |
+| `--no-link` | Produce `.o` object file(s) only, skip linking. The objects are written to `-o` — verbatim for a single-module program, otherwise into `-o`'s directory under module-derived names, since one `-o` cannot name several files. With no `-o` they land in the current directory. Each path is printed as `Wrote object file: <path>` |
+| `--no-codegen` | Skip the `package.json` `perry.codegen` build-time steps (also `PERRY_SKIP_CODEGEN=1`). See [Project Configuration](https://docs.perryts.com/getting-started/project-config.html) |
+| `--keep-intermediates` | Keep `.o` and `.asm` intermediate files |
+| `--debug-symbols` | Retain symbols/DWARF (and emit a Windows PDB) instead of stripping the result. |
+| `--no-cache` | Disable the per-module object cache for this build; also `PERRY_NO_CACHE=1`. |
+| `--cache-dir <PATH>` | Override the machine-local cache root; see [Cache Directory](https://docs.perryts.com/cli/cache-dir.html). |
+| `--verify-native-regions` | Run native-representation lowering invariants and force codegen instead of cache reuse. |
+| `--disable-buffer-fast-path` | Disable native Buffer/Uint8Array load/store lowering for A/B diagnosis. |
+| `--explain-lowering` | Emit a type-lowering evidence report; implies native-region verification. |
+| `--opt-report[=json]` | Report which values Perry could **not** statically type, why, and whether you can fix it. Text by default; `--opt-report=json` emits a stable schema for tooling. Also settable via `PERRY_OPT_REPORT=1` |
+| `--statepoint-report[=json]` | Report native-stack GC root pressure: calls with live roots, audited non-collecting calls omitted, relocations, plain-map fallbacks, and live-root widths. Research-only; requires `PERRY_RS4GC=1`, the one native-root backend (the plain stack-map and explicit-bridge modes it also named are gone) |
+
+The `--trace`/`--focus` pair localizes "compiled to the wrong thing" bugs:
+`perry compile foo.ts --trace hir,llvm --focus parseRow` dumps just the
+`parseRow` function's lowered HIR and the module's LLVM IR, so you can see
+which stage corrupted it without scrolling a full-module dump. `--trace llvm`
+forces a full recompile (the object cache otherwise skips codegen for
+unchanged modules, leaving the trace dir empty).
+
+### `--opt-report` — why a value stayed boxed
+
+Perry's speed comes from proving static types and selecting unboxed
+representations (see the
+[representation-selection RFC](https://github.com/PerryTS/perry/blob/main/docs/representation-selection-rfc.md)).
+When a proof fails the value stays NaN-boxed and the fast paths silently do
+not fire. `--opt-report` is the representation-selection analogue of LLVM's
+`-Rpass-missed` remarks: it prints what was proven, what was not, and which
+rule made the call.
+
+```console
+$ perry compile batch.ts -o batch --opt-report
+Representation summary
+----------------------
+  Ptr<Shape>          0 selected /    4 denied   (0% of 4 candidates)
+  I32/U32/Str         3 selected /    0 denied   (100% of 3 candidates)
+  specialized ABI     0 selected /    3 denied   (0% of 3 candidates)
+  TOTAL            3 values unboxed, 7 left Boxed
+
+*** Ptr<Shape> promoted 0 of 4 candidates in this build. ***
+    Every candidate was denied; the rules are in collectors/ptr_shape.rs.
+...
+  batch.ts :: local `acc` [loop depth 0]
+      in function totalsRow -> Boxed
+      ptr-shape rule 2 (containment)
+      returned from this function. Return positions do not carry a shape
+      fact yet, so returning a record forfeits its proof.
+```
+
+Each denied value carries:
+
+- **Position** — `local`, `param`, `return`, `field`, or `alloc-site` (an
+  object literal that is never bound to a local, the `.map(x => ({...}))`
+  idiom).
+- **The rule that denied it**, in the collector's own numbering, so you can
+  check it against the named source file.
+- **An actionability tier**: *Fixable in your source* (stop reassigning it,
+  don't capture it in a closure), *Inherently polymorphic* (correctly boxed —
+  no action), or *Perry limitation* (not your code; names the tracking issue
+  where one exists).
+- **A hotness proxy.** Loop-nesting depth **and**, separately, whether the
+  enclosing region is an iterating builtin's callback. The two are reported
+  as distinct columns on purpose: a `map`/`sort`/`reduce` callback has no
+  loop of its own but runs once per element, so loop depth alone ranks it
+  last. Neither is a profile — they are static proxies.
+
+Wins are reported alongside the misses, so the ratio is visible rather than
+just the complaints.
+
+**It is observational only** — emitted code is byte-identical with the flag
+on and off. Like `--trace llvm`, it disables build and object cache reuse for
+its own run, because a cache hit skips codegen entirely and there would be
+nothing to report. The report goes to **stderr**, so it never mixes into a
+`--format json` payload or your program's piped output.
+
+Values are identified by **function and binding name**: Perry's HIR keeps
+names through lowering but drops source positions, so there is no `file:line`
+yet. `--opt-report=json` carries the same data under `schema_version: 1`;
+diffing two builds' JSON is a cheap CI check against a representation
+silently regressing to zero.
+
+## Output Optimization
+
+| Flag | Description |
+|------|-------------|
+| `--minify` | Minify and obfuscate output (auto-enabled for `--target web`) |
+| `--march <CPU>` | CPU baseline for the generated machine code: an LLVM CPU name (`x86-64-v2`, `x86-64-v3`, `znver2`, `apple-m1`, …), `native` (tune to the build machine — the default for host builds), or `generic` (the target architecture's portable baseline — the default for cross builds). Pin this when the binary runs on other machines: a host-native build on an AVX-512 box otherwise SIGILLs on older x86-64 CPUs. Also settable via `PERRY_TARGET_CPU` or perry.toml `[build] march`; `[build] native_tuning = false` is shorthand for `generic`. Applies to app code and the auto-optimized runtime/stdlib rebuild. |
+| `--features <LIST>` | Define comma-separated compile-time `__feature_NAME__` constants for dead-code elimination. |
+| `--no-auto-optimize` | Use the prebuilt full runtime/stdlib instead of rebuilding the smallest reachable feature set. |
+| `--fast-math` | Permit floating-point reassociation; see [Fast-math](https://docs.perryts.com/cli/fast-math.html). |
+| `--fp-contract off\|on\|fast` | Control fused multiply-add contraction separately from reassociation. |
+
+Minification strips comments, collapses whitespace, and mangles local variable/parameter/non-exported function names for smaller output.
+
+### Size-optimized builds
+
+For the smallest possible native binaries, two opt-in environment variables
+rebuild the auto-optimized runtime/stdlib archives tuned for size instead of
+speed (they require a Perry workspace checkout, like the rest of
+auto-optimize):
+
+| Variable | Description |
+|----------|-------------|
+| `PERRY_SIZE_OPT=z` (or `s`) | Rebuild the runtime/stdlib at `-C opt-level=z`/`s` instead of `3`. Roughly halves a small program's binary at some runtime-speed cost (compute-heavy inner loops can run ~2-3× slower). Size-optimized and normal archives are cached independently. |
+| `PERRY_SIZE_LTO=fat` | Additionally run whole-archive fat LTO over the rebuilt archives (slower rebuild, smaller binary). Only meaningful together with `PERRY_SIZE_OPT`. |
+| `PERRY_SIZE_PANIC=abort-immediate` | Additionally rebuild the Rust standard library with the `immediate-abort` panic strategy when auto-optimize proves that no UI/thread/plugin callback needs unwinding, removing the backtrace symbolizer and unwind tables (~314 KB measured). Requires a nightly toolchain (`-Zbuild-std`); only meaningful together with `PERRY_SIZE_OPT`. A Rust-level internal panic then aborts without a symbolized backtrace — JS `throw`/`catch`, `finally`, error stacks and `uncaughtException` are unaffected. |
+
+A `console.log` hello world on macOS arm64: 4.03 MB default → 2.17 MB with
+`PERRY_SIZE_OPT=z PERRY_SIZE_LTO=fat` → 1.87 MB adding
+`PERRY_SIZE_PANIC=abort-immediate`. Programs that use more of the runtime
+shrink less, proportionally.
+
+## Testing Flags
+
+| Flag | Description |
+|------|-------------|
+| `--enable-geisterhand` | Embed the [Geisterhand](https://docs.perryts.com/testing/geisterhand.html) HTTP server for programmatic UI testing (default port 7676) |
+| `--geisterhand-port <PORT>` | Set a custom port for the Geisterhand server (implies `--enable-geisterhand`) |
+
+## Runtime Flags
+
+| Flag | Description |
+|------|-------------|
+| `--enable-js-runtime` | Enable V8 JavaScript runtime for unsupported npm packages |
+| `--enable-wasm-runtime` | Force-link the wasmi WebAssembly host runtime (auto-detected when `WebAssembly.*` is referenced; needed only when loading via dlopen / FFI without a static reference) |
+| `--type-check` | Enable type checking via tsgo IPC |
+| `--strict-eval` | Fail the build if any runtime-unknown `eval(...)` / `new Function(<dynamic body>)` site is reachable. By default such a site is compiled to a deferred runtime error (throws only if reached) and a compile-time notice is printed. Also settable via `perry.eval = "error"` / `perry.strict = true` (package.json or perry.toml). `PERRY_ALLOW_EVAL=1` forces it off. See [Limitations](https://docs.perryts.com/language/limitations.html#no-eval-or-dynamic-code). |
+| `--strict-dynamic-import` | Fail the build if a dynamic `import(...)` has a runtime-computed (non-resolvable) specifier. By default such a site is compiled to a rejected `Promise` that throws a descriptive `Error` only if reached, and is listed in the same end-of-build notice as deferred eval sites. Also settable via `perry.dynamicImport = "error"` / `perry.strict = true` (package.json or perry.toml). `PERRY_ALLOW_EVAL=1` forces it off. Resolvable forms (string literals, ternaries of resolvable arms, template literals over const locals, finite union-typed params, glob) are unaffected. See [Limitations](https://docs.perryts.com/language/limitations.html#no-eval-or-dynamic-code). |
+| `--strict-unimplemented` | Fail at compile time when a recognized but unimplemented Node/stdlib API is referenced instead of emitting a deferred runtime error. |
+| `--emit-attest` | Emit `<binary>.attest.json`; see [Binary attestation](https://docs.perryts.com/cli/emit-attest.html). |
+| `--emit-sandbox` | Emit the platform sandbox sidecar; see [Sandbox profiles](https://docs.perryts.com/cli/emit-sandbox.html). |
+| `--lockdown` | Refuse reachable arbitrary-code-execution surfaces; see [Lockdown](https://docs.perryts.com/cli/lockdown.html). |
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `PERRY_LICENSE_KEY` | Perry Hub license key for `perry publish` |
+| `PERRY_APPLE_CERTIFICATE_PASSWORD` | Password for .p12 certificate |
+| `PERRY_TARGET_CPU` | CPU baseline for generated machine code (same values as `--march`; the flag and perry.toml `[build] march` win over the env var) |
+| `PERRY_NO_UPDATE_CHECK=1` | Disable automatic update checks |
+| `NO_UPDATE_NOTIFIER` | The same, using the ecosystem-wide spelling |
+| `PERRY_UPDATE_MODE` | `off`/`notify`/`prompt`/`auto` for one run — see [Updates](https://docs.perryts.com/cli/updates.html) |
+| `PERRY_UPDATE_SERVER` | Custom update server URL |
+| `CI=true` | Auto-skip update checks (set by most CI systems) |
+| `RUST_LOG` | Debug logging level (`debug`, `info`, `trace`) |
+| `PERRY_OPT_REPORT` | `1`/`text` or `json` — same as `--opt-report[=json]`, for driving the report from an environment where adding a flag is awkward |
+
+The native-stack GC root-pressure report has **no** environment spelling: use
+`--statepoint-report[=json]`. The `PERRY_STATEPOINT_REPORT` variable is set by
+the driver to carry that flag to the codegen workers and is not read as user
+input — it was a fifth GC env knob with no CI arm, and was deleted under
+CLAUDE.md's GC knob kill policy.
+
+## Configuration Files
+
+### perry.toml (project)
+
+```toml
+[project]
+name = "my-app"
+entry = "src/main.ts"
+version = "1.0.0"
+
+[build]
+out_dir = "build"
+
+[compile]
+# Embed static assets into the standalone executable (same as repeated --embed).
+embed = ["./dist/**"]
+
+[app]
+name = "My App"
+description = "A Perry application"
+
+[macos]
+bundle_id = "com.example.myapp"
+category = "public.app-category.developer-tools"
+minimum_os = "13.0"
+distribute = "notarize"  # "appstore", "notarize", or "both"
+
+[ios]
+bundle_id = "com.example.myapp"
+deployment_target = "16.0"
+device_family = ["iphone", "ipad"]
+
+[android]
+package_name = "com.example.myapp"
+min_sdk = 26
+target_sdk = 34
+
+[linux]
+format = "appimage"  # "appimage", "deb", "rpm"
+category = "Development"
+```
+
+### ~/.perry/config.toml (global)
+
+```toml
+[apple]
+team_id = "XXXXXXXXXX"
+signing_identity = "Developer ID Application: Your Name"
+
+[android]
+keystore_path = "/path/to/keystore.jks"
+key_alias = "my-key"
+```
+
+## Examples
+
+```bash
+# Simple CLI program
+perry main.ts -o app
+
+# iOS app for simulator
+perry app.ts -o app --target ios-simulator
+
+# visionOS app for simulator
+perry app.ts -o app --target visionos-simulator
+
+# Web app (WASM with DOM bridge — alias: --target wasm)
+perry app.ts -o app --target web
+
+# Plugin shared library
+perry plugin.ts --output-type dylib -o plugin.dylib
+
+# iOS widget with bundle ID
+perry widget.ts --target ios-widget --app-bundle-id com.example.app
+
+# Debug compilation
+perry app.ts --print-hir 2>&1 | less
+
+# Verbose compilation
+perry compile app.ts -o app -vvv
+
+# Type-checked compilation
+perry app.ts -o app --type-check
+
+# Raw WASM binary (no HTML wrapper)
+perry app.ts -o app.wasm --target wasm
+
+# Minified web output (compresses embedded JS bridge)
+perry app.ts -o app --target web --minify
+```
+
+## Next Steps
+
+- [Commands](https://docs.perryts.com/cli/commands.html) — All CLI commands
+- [Platform Overview](https://docs.perryts.com/platforms/overview.html) — Platform targets
