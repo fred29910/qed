@@ -1,14 +1,37 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "module": "preserve",
+    "module": "ES2022",
     "moduleResolution": "bundler",
     "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
     "paths": {
       "perry/*": ["./.perry/types/perry/*/index.d.ts"]
     }
   },
-  "include": ["src", ".perry/types/stdlib/index.d.ts"]
+  "include": [
+    "src/**/*.ts",
+    ".perry/types/stdlib/index.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "platforms"
+  ]
 }

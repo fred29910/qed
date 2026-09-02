@@ -1,10 +1,67 @@
 # Perry configuration
 # https://github.com/PerryTS/perry
+#
+# Cross-platform desktop app skeleton (qed).
+# Single source compiles to Windows / macOS / Linux native binaries.
 
 [project]
 name = "qed"
+version = "0.1.0"
+description = "Cross-platform desktop application skeleton built with Perry."
 entry = "src/main.ts"
+bundle_id = "com.example.qed"
+
+[project.icons]
+source = "platforms/shared/icon.png"
 
 [build]
 out_dir = "dist"
+# Pin a portable CPU baseline so distributables run on older x86_64
+# machines without SIGILL on missing instructions.
+march = "x86-64-v2"
 opt_level = 2
+
+# -----------------------------------------------------------------------------
+# macOS
+# -----------------------------------------------------------------------------
+[macos]
+bundle_id = "com.example.qed.macos"
+category = "public.app-category.developer-tools"
+minimum_os = "13.0"
+# Required when the user-config toggle "launch at login" writes to
+# ~/Library/LaunchAgents on macOS. Network client is optional; included so
+# the app could fetch a remote update manifest without code changes later.
+entitlements = ["com.apple.security.network.client", "com.apple.security.files.user-selected.read-write"]
+distribute = "notarize"
+
+# -----------------------------------------------------------------------------
+# Linux
+# -----------------------------------------------------------------------------
+# `perry publish linux` honours this. We default to AppImage because it is a
+# single self-contained file the user can chmod + run, which matches the
+# "直接安装运行" requirement. The build-linux.sh script additionally produces
+# a .deb so .deb-aware package managers (apt, dpkg) accept it natively.
+[linux]
+format = "appimage"
+category = "Development"
+description = "Cross-platform desktop application skeleton built with Perry."
+
+# -----------------------------------------------------------------------------
+# Windows
+# -----------------------------------------------------------------------------
+# Windows is built via `perry compile --target windows`. We use the lightweight
+# LLVM toolchain (`perry setup windows`) — no Visual Studio required on the
+# dev box. The .msi step in build-windows.ps1 is performed by an explicit
+# `msi-pack` script after the .exe is produced, because the Perry CLI does not
+# emit .msi directly (it produces a standalone .exe).
+#
+# No [windows] section is needed: there is no Windows-specific metadata that
+# affects compilation. The bundle id and version are inherited from [project].
+
+# -----------------------------------------------------------------------------
+# i18n — kept as a stub so future localisation can be added without
+# touching the build config.
+# -----------------------------------------------------------------------------
+[i18n]
+locales = ["en"]
+default_locale = "en"
