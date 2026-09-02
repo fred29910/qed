@@ -1,0 +1,12 @@
+{
+  "name": "qed",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/main.ts",
+  "scripts": {
+    "build": "npx  @perryts/perry compile src/main.ts -o bin/qed"
+  },
+  "perry": {
+    "compilePackages": []
+  }
+}
