@@ -24,6 +24,7 @@ import {
     TextField,
     Toggle,
     VStack,
+    clipboardWrite,
     pickerAddItem,
     pickerSetSelected,
     textfieldSetString,
@@ -36,7 +37,10 @@ import { describeEnvironment } from '../../app/app-controller.js';
 import { applyTheme, paintMuted, paintText } from '../../ui/theme.js';
 import { Row, Section } from '../../ui/widgets.js';
 import { enableAutostart, disableAutostart } from '../../platform/index.js';
+import { logger, type LogLevel } from '../../diag.js';
 import type { ShellService } from '../../services/shell-service.js';
+
+const LOG_LEVELS: readonly LogLevel[] = ['silent', 'error', 'warn', 'info', 'debug', 'trace'];
 
 /** Build the settings view. */
 export function SettingsView(bus: IpcBus, store: AppStore, shell: ShellService): Widget {
@@ -86,15 +90,13 @@ export function SettingsView(bus: IpcBus, store: AppStore, shell: ShellService):
             try {
                 enableAutostart();
             } catch (err) {
-                // eslint-disable-next-line no-console
-                console.error('autostart enable failed:', err);
+                logger.error('autostart', 'enable failed', err);
             }
         } else {
             try {
                 disableAutostart();
             } catch (err) {
-                // eslint-disable-next-line no-console
-                console.error('autostart disable failed:', err);
+                logger.error('autostart', 'disable failed', err);
             }
         }
     });
@@ -148,6 +150,62 @@ export function SettingsView(bus: IpcBus, store: AppStore, shell: ShellService):
     );
 
     /* ---------------------------------------------------------------- *
+     * Advanced.                                                         *
+     * ---------------------------------------------------------------- */
+    // Log level picker: index maps to the `LOG_LEVELS` array above.
+    // `info` (index 3) is the default for ordinary users.
+    const logLevelIndex = Math.max(0, LOG_LEVELS.indexOf(cfg.logLevel));
+    const logLevelPicker = Picker((index) => {
+        const next = LOG_LEVELS[index] ?? 'info';
+        void bus.send('config:update', { patch: { logLevel: next } });
+    });
+    for (const lvl of LOG_LEVELS) {
+        pickerAddItem(logLevelPicker, lvl);
+    }
+    pickerSetSelected(logLevelPicker, logLevelIndex);
+
+    // Log file row: current file path + Reveal (uses shell:open-path
+    // via ShellService to keep a single OS reveal seam).
+    const logFileRow = Row(
+        'Log file',
+        HStack(8, [
+            Text(logger.currentFilePath()),
+            Button('Reveal', () => {
+                shell.revealInFileManager(env.logDir);
+            }),
+        ]),
+    );
+
+    // Copy recent entries: pulls the in-memory ring buffer (max 500)
+    // and writes the formatted lines to the clipboard. MVP scope; disk
+    // history is left to Phase 5.5.
+    const copyBufferButton = Button('Copy recent entries', () => {
+        const entries = logger.snapshot();
+        const lines = entries
+            .map((e) => {
+                const ts = new Date(e.ts).toISOString();
+                const ctx = e.context !== undefined ? ` ${JSON.stringify(e.context)}` : '';
+                return `${ts} ${e.level.toUpperCase()} [${e.category}] ${e.step}: ${e.message}${ctx}`;
+            })
+            .join('\n');
+        try {
+            clipboardWrite(lines);
+        } catch (err) {
+            logger.error('settings', 'clipboard write failed', err);
+        }
+    });
+
+    // Open log viewer: fires `view.openDiagnostics` AppCommand. The
+    // command is handled by the controller in Commit 9; until then
+    // the click is a no-op and we log a warning so the user (and our
+    // tests) can see the binding is wired.
+    const openLogViewerButton = Button('Open log viewer', () => {
+        // Defer to the controller via a bus channel that the handler
+        // can convert into a command. The handler is added in Commit 9.
+        void bus.send('view:open-diagnostics', undefined);
+    });
+
+    /* ---------------------------------------------------------------- *
      * About.                                                            *
      * ---------------------------------------------------------------- */
     const versionText = Text('qed v0.1.0');
@@ -170,6 +228,11 @@ export function SettingsView(bus: IpcBus, store: AppStore, shell: ShellService):
             Row('Background mode', backgroundToggle),
         ]),
         Section('Storage', [appDataRow, cacheRow, logRow, openConfigRow]),
+        Section('Advanced', [
+            Row('Log level', logLevelPicker),
+            logFileRow,
+            Row('Logging', HStack(8, [copyBufferButton, openLogViewerButton])),
+        ]),
         Section('About', [versionText, platformText, noteText]),
     ]);
 

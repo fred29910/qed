@@ -38,6 +38,7 @@ services/
 ## Anti-PATTERNS
 
 - **Don't import `fs` in `src/app/`, `src/modules/`, `src/ui/`, or `src/ipc/`.** All file I/O goes through `FileService` or the service barrel. The bus handlers in `src/ipc/` delegate to services; they don't touch `fs` themselves.
+  - **Exception:** `src/diag.ts` is the only module outside this directory allowed to import `fs`. It is logging infrastructure, not a business service, and is the single seam for cross-platform log file rotation under `logDir()`. The rule remains that business code must not call `fs` directly — only the logger and the services in this directory do.
 - **Don't create independent config stores.** `ConfigService` is the single source of truth. Other code reads via `snapshot()` and writes via `update()`. Don't instantiate a second `ConfigService` or cache config values outside the subscriber pattern.
 - **Don't bypass `assertSafePath`.** FileService guards against NUL bytes and empty paths. Other FS-touching code (if any appears) must apply the same checks or use `fs-permissions.ts` from `src/platform/`.
 - **Don't show notifications without checking preference.** Even if you wrap `NotificationService`, the preference check is inside `send()`. Don't duplicate the gate; don't call `notificationSend` from `perry/system` directly.

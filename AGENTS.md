@@ -7,6 +7,8 @@ Cross-platform desktop skeleton (Perry TypeScript AOT → native .exe/.app/.AppI
 
 **Core stack:** Perry CLI (`@perryts/perry` ^0.5.1220), TypeScript 5.4 (ESM `"type":"module"`, `bundler` resolution), ESLint + Prettier, custom build/package scripts (`scripts/build-*.sh`, `package:mac/linux/windows`). CI: `.github/workflows/build.yml` (ubuntu/mac/windows matrix, `npx @perryts/perry setup --host`, artifacts for `.exe`/`.app`/`.AppImage`/`.dms`/`.msi`).
 
+**Logging:** `src/diag.ts` — the only `fs` consumer outside `src/services/`. Perry AOT safe, leveled (`silent | error | warn | info | debug | trace`), rotating (1 MB / 7 days / 20 files), in-memory ring buffer (500 entries) for the in-app viewer (`src/modules/diagnostics/`). In-app viewer is reachable from Settings → Advanced → "Open log viewer" or View → Open Log Viewer. Review: `docs/reviews/2026-09-03-logger-plan-review.md`.
+
 **What this is not:** a web app, a node CLI, or a library. It's a frameless window with sidebar (File Manager / Settings / About), secondary settings window (always-on-top), tray + menu bar + notifications, JSON config with debounced flush, theme switch (light/dark/system), and optional autostart (LaunchAgent / Startup `.cmd` / XDG `.desktop`). Design doc: `docs/plan_ui_v1.md` (52 KB UI spec).
 
 ## STRUCTURE

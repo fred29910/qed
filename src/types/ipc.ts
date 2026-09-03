@@ -42,7 +42,10 @@ export type IpcChannel =
     | 'platform:info'
     | 'recent:add'
     | 'recent:list'
-    | 'recent:clear';
+    | 'recent:clear'
+    | 'log:snapshot'
+    | 'log:current-file-path'
+    | 'view:open-diagnostics';
 
 /** Request envelope sent over the bus. */
 export interface IpcRequest<T = unknown> {
@@ -167,3 +170,23 @@ export interface RecentAddPayload {
 }
 
 export type RecentList = readonly string[];
+
+/* ---------------------------------------------------------------- *
+ * Logging channels.                                                *
+ * ---------------------------------------------------------------- */
+
+import type { LogEntry, LogLevel } from '../diag.js';
+
+/** `log:snapshot` — returns the in-memory ring buffer (chronological). */
+export type LogSnapshot = readonly LogEntry[];
+
+/** `log:current-file-path` — returns the path of today's log file. */
+export type LogFilePath = string;
+
+/** Payload for `config:update` patches the `logLevel` field. */
+export interface LogLevelUpdatePayload {
+    readonly patch: { readonly logLevel: LogLevel };
+}
+
+/** `view:open-diagnostics` — request to open the log viewer window. */
+export type OpenDiagnosticsPayload = undefined;

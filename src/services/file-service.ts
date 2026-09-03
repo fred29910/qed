@@ -24,6 +24,7 @@ import {
 } from 'fs';
 import { dirname } from 'path';
 import { appDataDir, explainFsError } from '../platform/index.js';
+import { logger } from '../diag.js';
 import type { FsEntry, FsStat } from '../types/index.js';
 
 /** Maximum file size we will read into memory at once. */
@@ -61,7 +62,7 @@ export class FileService {
             } catch (err) {
                 // Skip entries we can't stat — the user can rename them
                 // away from a normal file manager.
-                console.error('stat failed for', full, explainFsError(err));
+                logger.error('fs', 'stat failed', err, { full, reason: explainFsError(err) });
             }
             if (entries.length >= MAX_LIST_ENTRIES) {
                 break;

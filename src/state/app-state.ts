@@ -24,6 +24,7 @@
  */
 import { isDarkMode } from 'perry/system';
 import { isLinux, isMacOS, isWindows } from '../platform/index.js';
+import { logger } from '../diag.js';
 import type { AppConfig, ThemeMode } from '../types/index.js';
 import type { ConfigService } from '../services/config-service.js';
 import type { RecentFilesService } from '../services/recent-files-service.js';
@@ -50,7 +51,7 @@ export type StoreListener = (state: AppState) => void;
 const INITIAL: AppState = {
     route: 'file-manager',
     config: {
-        version: 1,
+        version: 2,
         theme: 'system',
         autostart: false,
         notifications: true,
@@ -58,6 +59,7 @@ const INITIAL: AppState = {
         lastFolder: '',
         fontSize: 13,
         displayName: '',
+        logLevel: 'info',
     },
     resolvedTheme: 'light',
     recentFiles: [],
@@ -153,7 +155,7 @@ export class AppStore {
                 l(this.state);
             } catch (err) {
                 // Listeners must not break the dispatcher.
-                console.error('store listener threw:', err);
+                logger.error('store', 'listener threw', err);
             }
         }
     }

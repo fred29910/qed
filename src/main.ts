@@ -43,7 +43,7 @@ import { StatusBar } from './ui/status-bar.js';
 import { Toast } from './ui/toast.js';
 import { TitleBar } from './ui/title-bar.js';
 import { applyTheme, getPalette, paintBackground } from './ui/theme.js';
-import { diag, diagErr } from './diag.js';
+import { diag, diagErr, logger } from './diag.js';
 // `diagErr` is intentionally retained: error sites should call it once
 // the app graduates past the skeleton. For now it's exported but unused.
 void diagErr;
@@ -58,6 +58,11 @@ function main(): void {
     diag('constructing ConfigService');
     const config = new ConfigService();
     diag('ConfigService ready', { theme: config.snapshot().theme });
+    // Apply the persisted log level as soon as the config is loaded so
+    // every subsequent diagnostic call uses the user-chosen severity.
+    // Done before any other service construction so their boot traces
+    // are filtered accordingly.
+    logger.setLevel(config.snapshot().logLevel);
     diag('constructing FileService');
     const files = new FileService();
     diag('FileService ready');

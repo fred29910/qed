@@ -48,6 +48,7 @@ export type AppCommand =
     | 'edit.selectAll'
     | 'view.toggleTheme'
     | 'view.toggleAlwaysOnTop'
+    | 'view.openDiagnostics'
     | 'help.docs'
     | 'help.openLogDir';
 
@@ -123,6 +124,7 @@ function installMacOSMenu(handler: CommandHandler): void {
     const viewMenu = menuCreate();
     menuAddItem(viewMenu, 'Toggle Theme', () => handler('view.toggleTheme'));
     menuAddItem(viewMenu, 'Toggle Always On Top', () => handler('view.toggleAlwaysOnTop'));
+    menuAddItem(viewMenu, 'Open Log Viewer', () => handler('view.openDiagnostics'));
     menuBarAddMenu(bar, 'View', viewMenu);
 
     // ---- Help ----
@@ -165,6 +167,7 @@ function installDesktopMenu(handler: CommandHandler): void {
     const viewMenu = menuCreate();
     menuAddItem(viewMenu, 'Toggle Theme', () => handler('view.toggleTheme'));
     menuAddItem(viewMenu, 'Toggle Always On Top', () => handler('view.toggleAlwaysOnTop'));
+    menuAddItem(viewMenu, 'Open Log Viewer', () => handler('view.openDiagnostics'));
     menuBarAddMenu(bar, 'View', viewMenu);
 
     // ---- Help ----

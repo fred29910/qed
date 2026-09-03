@@ -31,10 +31,11 @@ import type { AppCommand } from '../platform/menu-bar.js';
 import { installAppMenu } from '../platform/menu-bar.js';
 import { installTray } from '../platform/tray-adapter.js';
 import { createSettingsWindow } from '../ui/settings-window.js';
+import { createDiagnosticsWindow } from '../modules/diagnostics/index.js';
 import { resolveTheme, type AppStore } from '../state/app-state.js';
 import type { ControllerContext } from './app-controller-types.js';
 import type { AppEvent, AppEventListener } from './app-controller-types.js';
-import { diag } from '../diag.js';
+import { diag, logger } from '../diag.js';
 
 /* ---------------------------------------------------------------- *
  * Internal state.                                                   *
@@ -44,6 +45,7 @@ let mainWindow: PerryWindow | null = null;
 let backgroundModeEnabled = false;
 let alwaysOnTopEnabled = false;
 let settingsWindow: PerryWindow | null = null;
+let diagnosticsWindow: PerryWindow | null = null;
 let trayHandle: Widget | null = null;
 let activeContext: ControllerContext | null = null;
 
@@ -77,8 +79,7 @@ function emit(event: AppEvent): void {
         try {
             l(event);
         } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('app event listener threw:', err);
+            logger.error('controller', 'event listener threw', err);
         }
     }
 }
@@ -88,8 +89,7 @@ function emitFileManagerIntent(intent: FileManagerIntent): void {
         try {
             l(intent);
         } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('file manager intent listener threw:', err);
+            logger.error('controller', 'intent listener threw', err);
         }
     }
 }
@@ -112,6 +112,20 @@ export function startApp(ctx: ControllerContext, body: Widget): void {
     applyAutostartFromConfig(ctx);
     backgroundModeEnabled = ctx.config.snapshot().backgroundMode;
     diag('startApp: backgroundMode read');
+
+    // Wire the logger to the persisted log level. After this, every
+    // config-level flip (via Settings → Advanced → Log level) is
+    // applied immediately, no restart required.
+    ctx.config.subscribe((c) => {
+        logger.setLevel(c.logLevel);
+    });
+
+    // Wire the UI-side "Open log viewer" button to the controller's
+    // openDiagnosticsWindow(). The IPC seam keeps the settings view
+    // free of controller imports.
+    ctx.bus.register<undefined, void>('view:open-diagnostics', () => {
+        openDiagnosticsWindow();
+    });
 
     diag('startApp: installAppMenu');
     installAppMenu(handleCommand);
@@ -163,15 +177,21 @@ export function handleCommand(command: AppCommand): void {
             openSettingsWindow();
             return;
         case 'app.hide':
-            if (mainWindow !== null) mainWindow.hide();
+            if (mainWindow !== null) {
+                mainWindow.hide();
+            }
             return;
         case 'app.hideOthers':
             return;
         case 'app.showAll':
-            if (mainWindow !== null) mainWindow.show();
+            if (mainWindow !== null) {
+                mainWindow.show();
+            }
             return;
         case 'app.quit':
-            if (mainWindow !== null) mainWindow.close();
+            if (mainWindow !== null) {
+                mainWindow.close();
+            }
             return;
         case 'file.new':
             navigateTo('file-manager');
@@ -197,6 +217,9 @@ export function handleCommand(command: AppCommand): void {
             return;
         case 'view.toggleAlwaysOnTop':
             toggleAlwaysOnTop();
+            return;
+        case 'view.openDiagnostics':
+            openDiagnosticsWindow();
             return;
         case 'help.docs':
             if (activeContext !== null) {
@@ -228,7 +251,9 @@ export function navigateTo(route: Route): void {
 
 /** Open (or show, if already open) the secondary settings window. */
 export function openSettingsWindow(): void {
-    if (activeContext === null) return;
+    if (activeContext === null) {
+        return;
+    }
     if (settingsWindow === null) {
         settingsWindow = createSettingsWindow(activeContext.bus, activeContext.store, activeContext.shell);
     } else {
@@ -239,14 +264,35 @@ export function openSettingsWindow(): void {
 
 /** Hide the settings window without destroying it. */
 export function closeSettingsWindow(): void {
-    if (settingsWindow === null) return;
+    if (settingsWindow === null) {
+        return;
+    }
     settingsWindow.hide();
     emit({ kind: 'settings-window-closed' });
 }
 
+/** Open (or show, if already open) the diagnostics (log viewer) window. */
+export function openDiagnosticsWindow(): void {
+    if (diagnosticsWindow === null) {
+        diagnosticsWindow = createDiagnosticsWindow();
+    } else {
+        diagnosticsWindow.show();
+    }
+}
+
+/** Hide the diagnostics window without destroying it. */
+export function closeDiagnosticsWindow(): void {
+    if (diagnosticsWindow === null) {
+        return;
+    }
+    diagnosticsWindow.hide();
+}
+
 /** Close (or hide, in background mode) the main window. */
 export function closeMainWindow(): void {
-    if (mainWindow === null) return;
+    if (mainWindow === null) {
+        return;
+    }
     if (backgroundModeEnabled) {
         mainWindow.hide();
     } else {
@@ -265,15 +311,13 @@ function applyAutostartFromConfig(ctx: ControllerContext): void {
         try {
             enableAutostart();
         } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('autostart enable failed:', err);
+            logger.error('autostart', 'enable failed', err);
         }
     } else if (!want && have) {
         try {
             disableAutostart();
         } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('autostart disable failed:', err);
+            logger.error('autostart', 'disable failed', err);
         }
     }
 }
@@ -289,7 +333,9 @@ export function toggleAlwaysOnTop(): void {
 
 /** Cycle System → Light → Dark → System. */
 function cycleTheme(): void {
-    if (activeContext === null) return;
+    if (activeContext === null) {
+        return;
+    }
     const current = activeContext.config.snapshot().theme;
     const next: 'system' | 'light' | 'dark' =
         current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
@@ -311,28 +357,33 @@ export function onAppActivate(_ctx: ControllerContext): void {
 
 /** Called on graceful shutdown. */
 export function onAppTerminate(ctx: ControllerContext): void {
+    // Flush the in-memory ring buffer first so trailing diagnostics
+    // survive a clean shutdown. (Buffer is currently append-on-write;
+    // flush is a sync point, future-proofing for buffered I/O.)
+    logger.flush();
     try {
         ctx.config.flushNow();
     } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('config flush failed on terminate:', err);
+        logger.error('controller', 'terminate: config flush failed', err);
     }
-    if (trayHandle !== null) trayHandle = null;
-    if (settingsWindow !== null) settingsWindow = null;
+    if (trayHandle !== null) {
+        trayHandle = null;
+    }
+    if (settingsWindow !== null) {
+        settingsWindow = null;
+    }
 }
 
 /** Called when the app moves to the background (Perry has no native
  * hook for this today; we expose the function so the entry point
  * can wire it in once a hook ships). */
 export function onAppBackground(): void {
-    // eslint-disable-next-line no-console
-    console.log('app entered background');
+    logger.info('lifecycle', 'background', 'entered background');
 }
 
 /** Called when the app becomes active again. */
 export function onAppForeground(): void {
-    // eslint-disable-next-line no-console
-    console.log('app became active');
+    logger.info('lifecycle', 'foreground', 'became active');
 }
 
 /* ---------------------------------------------------------------- *

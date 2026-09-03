@@ -12,10 +12,20 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
 import { configFilePath, explainFsError } from '../platform/index.js';
+import { logger, type LogLevel } from '../diag.js';
 import { DEFAULT_CONFIG, type AppConfig, type ThemeMode } from '../types/index.js';
 
 /** Current schema version. */
-const SCHEMA_VERSION = 1 as const;
+const SCHEMA_VERSION = 2 as const;
+
+const VALID_LOG_LEVELS: readonly LogLevel[] = [
+    'silent',
+    'error',
+    'warn',
+    'info',
+    'debug',
+    'trace',
+];
 
 /** A subscriber to config changes. */
 export type ConfigListener = (config: AppConfig) => void;
@@ -81,7 +91,7 @@ export class ConfigService {
                 l(snapshot);
             } catch (err) {
                 // Listeners must not break the dispatcher — log and continue.
-                console.error('config listener threw:', err);
+                logger.error('config', 'listener threw', err);
             }
         }
     }
@@ -97,7 +107,7 @@ export class ConfigService {
             try {
                 writeToDisk(this.state);
             } catch (err) {
-                console.error('config flush failed:', explainFsError(err));
+                logger.error('config', 'flush failed', new Error(explainFsError(err)));
             }
         }, 250) as unknown as number;
     }
@@ -120,7 +130,7 @@ function loadFromDisk(): AppConfig {
         }
         return mergeWithDefaults(parsed);
     } catch (err) {
-        console.error('config load failed; using defaults:', explainFsError(err));
+        logger.error('config', 'load failed; using defaults', new Error(explainFsError(err)));
         return cloneConfig(DEFAULT_CONFIG);
     }
 }
@@ -166,6 +176,12 @@ function mergeWithDefaults(raw: Record<string, unknown>): AppConfig {
     if (typeof raw['displayName'] === 'string') {
         (merged as { displayName: string }).displayName = raw['displayName'];
     }
+    if (typeof raw['logLevel'] === 'string') {
+        const lvl = raw['logLevel'];
+        if (VALID_LOG_LEVELS.includes(lvl as LogLevel)) {
+            (merged as { logLevel: LogLevel }).logLevel = lvl as LogLevel;
+        }
+    }
     return merged;
 }
 
@@ -196,5 +212,6 @@ function cloneConfig(c: AppConfig): AppConfig {
         lastFolder: c.lastFolder,
         fontSize: c.fontSize,
         displayName: c.displayName,
+        logLevel: c.logLevel,
     };
 }

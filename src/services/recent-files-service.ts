@@ -8,6 +8,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
 import { explainFsError, recentFilesPath } from '../platform/index.js';
+import { logger } from '../diag.js';
 
 /** Maximum number of recent paths we remember. */
 const MAX_RECENT = 20;
@@ -45,7 +46,7 @@ export class RecentFilesService {
             mkdirSync(dirname(path), { recursive: true });
             writeFileSync(path, JSON.stringify(this.paths, null, 2));
         } catch (err) {
-            console.error('recent-files flush failed:', explainFsError(err));
+            logger.error('recent', 'flush failed', new Error(explainFsError(err)));
         }
     }
 }
@@ -63,7 +64,7 @@ function loadFromDisk(): string[] {
         }
         return parsed.filter((v): v is string => typeof v === 'string').slice(0, MAX_RECENT);
     } catch (err) {
-        console.error('recent-files load failed:', explainFsError(err));
+        logger.error('recent', 'load failed', new Error(explainFsError(err)));
         return [];
     }
 }

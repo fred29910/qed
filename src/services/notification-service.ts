@@ -10,6 +10,7 @@
  */
 import { notificationSend } from 'perry/system';
 import { explainFsError } from '../platform/index.js';
+import { logger } from '../diag.js';
 import type { ConfigService } from './config-service.js';
 
 export class NotificationService {
@@ -29,7 +30,7 @@ export class NotificationService {
             notificationSend(title, body);
             return true;
         } catch (err) {
-            console.error('notification failed:', explainFsError(err));
+            logger.error('notify', 'send failed', new Error(explainFsError(err)));
             return false;
         }
     }

@@ -10,6 +10,7 @@ import { arch } from 'os';
 import { describeEnvironment } from '../../app/app-controller.js';
 import { Row, Section } from '../../ui/widgets.js';
 import { paintMuted, paintText } from '../../ui/theme.js';
+import { logger } from '../../diag.js';
 import type { ShellService } from '../../services/shell-service.js';
 
 /** Build the About view. */
@@ -44,6 +45,7 @@ export function AboutView(shell: ShellService): Widget {
     const archRow = Row('Architecture', Text(arch()));
     const execRow = Row('Executable', Text(process.execPath));
     const dataDirRow = Row('App data', Text(env.appDataDir));
+    const logFileRow = Row('Log file', Text(logger.currentFilePath()));
 
     /* ---------------------------------------------------------------- *
      * Actions.                                                          *
@@ -59,7 +61,7 @@ export function AboutView(shell: ShellService): Widget {
     return VStack(16, [
         VStack(4, [title, version, subtitle, madeWith]),
         Section('Credits', credits),
-        Section('System info', [platformRow, archRow, execRow, dataDirRow]),
+        Section('System info', [platformRow, archRow, execRow, dataDirRow, logFileRow]),
         actionRow,
     ]);
 }
