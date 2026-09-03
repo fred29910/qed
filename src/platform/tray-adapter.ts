@@ -30,9 +30,9 @@ import {
     trayOnClick,
     traySetTooltip,
     type Widget,
-} from "perry/ui";
-import { isMacOS } from "./platform.js";
-import type { AppCommand, CommandHandler } from "./menu-bar.js";
+} from 'perry/ui';
+import { isMacOS } from './platform.js';
+import type { CommandHandler } from './menu-bar.js';
 
 /** Result of setting up the tray. */
 export interface TrayHandle {
@@ -60,24 +60,24 @@ export function installTray(handler: CommandHandler, tooltip: string): TrayHandl
     // (PNG everywhere, .icns on macOS, .ico on Windows). Users can
     // replace the placeholder with `traySetIcon` once a real asset is
     // added to `platforms/<host>/tray.png`.
-    const tray: Widget = trayCreate("");
+    const tray: Widget = trayCreate('');
     traySetTooltip(tray, tooltip);
 
     const menu = menuCreate();
-    menuAddItem(menu, "Show Main Window", () => handler("app.about"));
+    menuAddItem(menu, 'Show Main Window', () => handler('app.about'));
     menuAddSeparator(menu);
-    menuAddItem(menu, "Open File Manager", () => handler("file.open"));
-    menuAddItem(menu, "Preferences…", () => handler("app.preferences"));
+    menuAddItem(menu, 'Open File Manager', () => handler('file.open'));
+    menuAddItem(menu, 'Preferences…', () => handler('app.preferences'));
     menuAddSeparator(menu);
-    menuAddItem(menu, "About", () => handler("app.about"));
-    menuAddItem(menu, "Quit", () => handler("app.quit"));
+    menuAddItem(menu, 'About', () => handler('app.about'));
+    menuAddItem(menu, 'Quit', () => handler('app.quit'));
     trayAttachMenu(tray, menu);
 
     // On Windows / Linux, the user gets an "extra" left-click → show main.
     // On macOS this callback would only fire when the menu is missing, so
     // we still register it for consistency; macOS users see the menu.
     if (!isMacOS()) {
-        trayOnClick(tray, () => handler("app.about"));
+        trayOnClick(tray, () => handler('app.about'));
     }
 
     return { widget: tray, visible: true };

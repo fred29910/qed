@@ -21,13 +21,11 @@
  * to permission failures with a friendly message rather than a thrown
  * exception.
  */
-import { statSync } from "fs";
-import { getHostKind } from "./platform.js";
+import { statSync, unlinkSync, writeFileSync } from 'fs';
+import { getHostKind } from './platform.js';
 
 /** Permission check result. */
-export type FsAccess =
-    | { readonly ok: true }
-    | { readonly ok: false; readonly reason: string };
+export type FsAccess = { readonly ok: true } | { readonly ok: false; readonly reason: string };
 
 /**
  * Best-effort probe: is the path readable & writable by the current user?
@@ -54,12 +52,12 @@ export function checkFsAccess(path: string, tryWriteProbe: boolean): FsAccess {
 
     // Write probe: try a tiny file write. We can't use `access(W_OK)` portably
     // because on some platforms it returns misleading results. We DO write.
-    const probePath = path + "/.qed-write-probe";
+    const probePath = path + '/.qed-write-probe';
     try {
         // The probe is intentionally minimal — we only need to know if the
         // filesystem will let us open the path for writing.
-        require("fs").writeFileSync(probePath, "ok", { flag: "w" });
-        require("fs").unlinkSync(probePath);
+        writeFileSync(probePath, 'ok', { flag: 'w' });
+        unlinkSync(probePath);
         return { ok: true };
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -80,25 +78,25 @@ export function explainFsError(err: unknown): string {
     // EACCES / EPERM appear in different shapes across platforms — match
     // on the substring rather than the numeric code for portability.
     if (/EACCES|EPERM|permission denied/i.test(msg)) {
-        if (kind === "macos") {
-            return "Permission denied. On macOS, grant access in System Settings → Privacy & Security.";
+        if (kind === 'macos') {
+            return 'Permission denied. On macOS, grant access in System Settings → Privacy & Security.';
         }
-        if (kind === "windows") {
-            return "Permission denied. On Windows, run as administrator or pick a folder you own.";
+        if (kind === 'windows') {
+            return 'Permission denied. On Windows, run as administrator or pick a folder you own.';
         }
         return "Permission denied. Check the file's owner and mode (e.g. ls -l).";
     }
     if (/ENOENT|no such file/i.test(msg)) {
-        return "Path does not exist.";
+        return 'Path does not exist.';
     }
     if (/EISDIR|is a directory/i.test(msg)) {
-        return "Expected a file but found a directory.";
+        return 'Expected a file but found a directory.';
     }
     if (/ENOTDIR|not a directory/i.test(msg)) {
-        return "Expected a directory but found a file.";
+        return 'Expected a directory but found a file.';
     }
     if (/ENOSPC|no space/i.test(msg)) {
-        return "No space left on device.";
+        return 'No space left on device.';
     }
     return msg;
 }

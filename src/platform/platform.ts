@@ -36,28 +36,24 @@ export type PlatformId = (typeof PlatformId)[keyof typeof PlatformId];
 export const PLATFORM: PlatformId = __platform__ as PlatformId;
 
 /** Coarse-grained host classification used by the rest of the app. */
-export type HostKind = "macos" | "windows" | "linux" | "other";
+export type HostKind = 'macos' | 'windows' | 'linux' | 'other';
 
 export function getHostKind(): HostKind {
     if (PLATFORM === PlatformId.macOS) {
-        return "macos";
+        return 'macos';
     }
     if (PLATFORM === PlatformId.Windows) {
-        return "windows";
+        return 'windows';
     }
     if (PLATFORM === PlatformId.Linux) {
-        return "linux";
+        return 'linux';
     }
-    return "other";
+    return 'other';
 }
 
 /** True when running on a desktop-class host (mac / win / linux). */
 export function isDesktop(): boolean {
-    return (
-        PLATFORM === PlatformId.macOS ||
-        PLATFORM === PlatformId.Windows ||
-        PLATFORM === PlatformId.Linux
-    );
+    return PLATFORM === PlatformId.macOS || PLATFORM === PlatformId.Windows || PLATFORM === PlatformId.Linux;
 }
 
 /** True when running on macOS — used to gate AppKit-only affordances. */
@@ -79,24 +75,24 @@ export function isLinux(): boolean {
 export function platformLabel(): string {
     switch (PLATFORM) {
         case PlatformId.macOS:
-            return "macOS";
+            return 'macOS';
         case PlatformId.Windows:
-            return "Windows";
+            return 'Windows';
         case PlatformId.Linux:
-            return "Linux";
+            return 'Linux';
         case PlatformId.iOS:
-            return "iOS";
+            return 'iOS';
         case PlatformId.Android:
-            return "Android";
+            return 'Android';
         case PlatformId.Web:
-            return "Web";
+            return 'Web';
         case PlatformId.tvOS:
-            return "tvOS";
+            return 'tvOS';
         case PlatformId.watchOS:
-            return "watchOS";
+            return 'watchOS';
         case PlatformId.visionOS:
-            return "visionOS";
+            return 'visionOS';
         default:
-            return "Unknown";
+            return 'Unknown';
     }
 }

@@ -20,14 +20,8 @@
  * comes from "schedule later" (`Promise.resolve().then(...)`), not
  * from real concurrency. The bus doesn't need to care.
  */
-import { explainFsError } from "../platform/index.js";
-import type {
-    IpcChannel,
-    IpcErr,
-    IpcId,
-    IpcRequest,
-    IpcResponse,
-} from "../types/index.js";
+import { explainFsError } from '../platform/index.js';
+import type { IpcChannel, IpcErr, IpcId, IpcRequest, IpcResponse } from '../types/index.js';
 
 /** A handler for a single channel. May return a value or throw. */
 export type IpcHandler<TPayload, TResult> = (payload: TPayload) => TResult | Promise<TResult>;
@@ -38,6 +32,7 @@ export type IpcHandlerMap = {
 };
 
 const DEFAULT_TIMEOUT_MS = 5000;
+void DEFAULT_TIMEOUT_MS;
 
 export class IpcBus {
     private readonly handlers: Map<IpcChannel, IpcHandler<unknown, unknown>> = new Map();
@@ -61,8 +56,11 @@ export class IpcBus {
             throw new Error(`no handler registered for channel "${channel}"`);
         }
         const id = this.makeId();
-        const ts = Date.now();
-        const request: IpcRequest<TPayload> = { id, channel, payload, ts };
+        // Build the request envelope (used for logging and for
+        // future worker-mode transport). We don't pass it to the
+        // handler today.
+        const request: IpcRequest<TPayload> = { id, channel, payload, ts: Date.now() };
+        void request;
         let response: IpcResponse<TResult>;
         try {
             const value = await Promise.resolve().then(() => handler(payload));
@@ -98,14 +96,14 @@ export class IpcBus {
     private makeId(): IpcId {
         this.nextId = (this.nextId + 1) & 0xffff;
         const timePart = Date.now() & 0xffffff;
-        return timePart.toString(16).padStart(6, "0") + this.nextId.toString(16).padStart(4, "0");
+        return timePart.toString(16).padStart(6, '0') + this.nextId.toString(16).padStart(4, '0');
     }
 }
 
 /** Convenience: build a typed request envelope (mainly for tests). */
 export function makeRequest<T>(channel: IpcChannel, payload: T): IpcRequest<T> {
-    return { id: "test", channel, payload, ts: Date.now() };
+    return { id: 'test', channel, payload, ts: Date.now() };
 }
 
 // Re-export for callers that want a single import.
-export type { IpcChannel, IpcRequest, IpcResponse } from "../types/index.js";
+export type { IpcChannel, IpcRequest, IpcResponse } from '../types/index.js';

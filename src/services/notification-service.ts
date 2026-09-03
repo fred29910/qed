@@ -8,9 +8,9 @@
  *   - Routes failures through the same explainer the rest of the app
  *     uses, so the UI can show a uniform toast.
  */
-import { notificationSend } from "perry/system";
-import { explainFsError } from "../platform/index.js";
-import type { ConfigService } from "./config-service.js";
+import { notificationSend } from 'perry/system';
+import { explainFsError } from '../platform/index.js';
+import type { ConfigService } from './config-service.js';
 
 export class NotificationService {
     constructor(private readonly config: ConfigService) {}
@@ -29,7 +29,7 @@ export class NotificationService {
             notificationSend(title, body);
             return true;
         } catch (err) {
-            console.error("notification failed:", explainFsError(err));
+            console.error('notification failed:', explainFsError(err));
             return false;
         }
     }

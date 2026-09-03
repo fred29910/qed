@@ -21,10 +21,10 @@ import {
     rmSync,
     statSync,
     writeFileSync,
-} from "fs";
-import { dirname } from "path";
-import { appDataDir, explainFsError } from "../platform/index.js";
-import type { FsEntry, FsStat } from "../types/index.js";
+} from 'fs';
+import { dirname } from 'path';
+import { appDataDir, explainFsError } from '../platform/index.js';
+import type { FsEntry, FsStat } from '../types/index.js';
 
 /** Maximum file size we will read into memory at once. */
 const MAX_READ_BYTES = 32 * 1024 * 1024; // 32 MB
@@ -44,10 +44,10 @@ export class FileService {
         const names = readdirSync(path);
         const entries: FsEntry[] = [];
         for (const name of names) {
-            if (!showHidden && name.startsWith(".")) {
+            if (!showHidden && name.startsWith('.')) {
                 continue;
             }
-            const full = path + "/" + name;
+            const full = path + '/' + name;
             try {
                 const st = statSync(full);
                 entries.push({
@@ -56,12 +56,12 @@ export class FileService {
                     isDir: st.isDirectory(),
                     size: st.size,
                     mtimeMs: st.mtimeMs,
-                    isHidden: name.startsWith("."),
+                    isHidden: name.startsWith('.'),
                 });
             } catch (err) {
                 // Skip entries we can't stat — the user can rename them
                 // away from a normal file manager.
-                console.error("stat failed for", full, explainFsError(err));
+                console.error('stat failed for', full, explainFsError(err));
             }
             if (entries.length >= MAX_LIST_ENTRIES) {
                 break;
@@ -72,7 +72,7 @@ export class FileService {
     }
 
     /** Read a small text/binary file. Throws if the file is too large. */
-    read(path: string, encoding: "utf-8" | "binary"): string {
+    read(path: string, encoding: 'utf-8' | 'binary'): string {
         const st = statSync(path);
         if (st.size > MAX_READ_BYTES) {
             throw new Error(
@@ -80,20 +80,19 @@ export class FileService {
             );
         }
         const buf = readFileSync(path);
-        if (encoding === "utf-8") {
-            return buf.toString("utf-8");
+        if (encoding === 'utf-8') {
+            return buf.toString('utf-8');
         }
         // For "binary" we return a base64 string so it round-trips
         // through the IPC layer (the envelope is JSON).
-        return buf.toString("base64");
+        return buf.toString('base64');
     }
 
     /** Write a text or base64-encoded binary file. Creates parents as needed. */
-    write(path: string, content: string, encoding: "utf-8" | "binary"): void {
+    write(path: string, content: string, encoding: 'utf-8' | 'binary'): void {
         assertSafePath(path);
         mkdirSync(dirname(path), { recursive: true });
-        const data =
-            encoding === "utf-8" ? Buffer.from(content, "utf-8") : Buffer.from(content, "base64");
+        const data = encoding === 'utf-8' ? Buffer.from(content, 'utf-8') : Buffer.from(content, 'base64');
         writeFileSync(path, data);
     }
 
@@ -143,8 +142,12 @@ function compareEntries(a: FsEntry, b: FsEntry): number {
     }
     const an = a.name.toLowerCase();
     const bn = b.name.toLowerCase();
-    if (an < bn) return -1;
-    if (an > bn) return 1;
+    if (an < bn) {
+        return -1;
+    }
+    if (an > bn) {
+        return 1;
+    }
     return 0;
 }
 
@@ -154,12 +157,12 @@ function compareEntries(a: FsEntry, b: FsEntry): number {
  */
 function assertSafePath(path: string): void {
     if (path.length === 0) {
-        throw new Error("path is empty");
+        throw new Error('path is empty');
     }
-    if (path.indexOf("\0") !== -1) {
-        throw new Error("path contains NUL byte");
+    if (path.indexOf('\0') !== -1) {
+        throw new Error('path contains NUL byte');
     }
-    if (path === appDataDir() || path.startsWith(appDataDir() + "/") === false) {
+    if (path === appDataDir() || path.startsWith(appDataDir() + '/') === false) {
         // We do NOT block writes into appDataDir — settings live there.
         // The check is intentionally lenient: it just makes sure the
         // path is non-empty and printable. Tighter rules belong at the

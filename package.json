@@ -13,7 +13,7 @@
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.{ts,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json,md}\"",
-    "build": "perry compile src/main.ts -o bin/qed",
+    "build": "mkdir -p bin && perry compile src/main.ts -o bin/qed",
     "build:windows": "bash scripts/build-windows.sh",
     "build:mac": "bash scripts/build-mac.sh",
     "build:linux": "bash scripts/build-linux.sh",
@@ -36,6 +36,8 @@
     }
   },
   "devDependencies": {
+    "@perryts/perry": "^0.5.1220",
+    "@types/node": "^26.4.1",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",

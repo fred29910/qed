@@ -4,6 +4,7 @@ dist/
 
 # Generated type stubs (regenerate with `perry types`)
 .perry/types/
+src/.perry/ 
 
 # Node modules
 node_modules/

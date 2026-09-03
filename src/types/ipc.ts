@@ -20,29 +20,29 @@
  * The shape mirrors a JSON-RPC-ish envelope so we can keep the door
  * open for a future worker-mode split.
  */
-import type { AppConfig, ThemeMode } from "./config.js";
+import type { AppConfig, ThemeMode } from './config.js';
 
 /** A unique request id, used to correlate request/response pairs. */
 export type IpcId = string;
 
 /** IPC channel names. Centralised so typos surface at compile time. */
 export type IpcChannel =
-    | "config:get"
-    | "config:update"
-    | "fs:list"
-    | "fs:read"
-    | "fs:write"
-    | "fs:delete"
-    | "fs:rename"
-    | "fs:mkdir"
-    | "fs:stat"
-    | "shell:open-path"
-    | "shell:open-url"
-    | "notify:send"
-    | "platform:info"
-    | "recent:add"
-    | "recent:list"
-    | "recent:clear";
+    | 'config:get'
+    | 'config:update'
+    | 'fs:list'
+    | 'fs:read'
+    | 'fs:write'
+    | 'fs:delete'
+    | 'fs:rename'
+    | 'fs:mkdir'
+    | 'fs:stat'
+    | 'shell:open-path'
+    | 'shell:open-url'
+    | 'notify:send'
+    | 'platform:info'
+    | 'recent:add'
+    | 'recent:list'
+    | 'recent:clear';
 
 /** Request envelope sent over the bus. */
 export interface IpcRequest<T = unknown> {
@@ -91,13 +91,13 @@ export interface FsListPayload {
 export interface FsReadPayload {
     readonly path: string;
     /** Encoding hint. Default "utf-8". "binary" returns a Uint8Array-like view. */
-    readonly encoding: "utf-8" | "binary";
+    readonly encoding: 'utf-8' | 'binary';
 }
 
 export interface FsWritePayload {
     readonly path: string;
     readonly content: string;
-    readonly encoding: "utf-8" | "binary";
+    readonly encoding: 'utf-8' | 'binary';
 }
 
 export interface FsDeletePayload {

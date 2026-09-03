@@ -22,17 +22,17 @@
  * that aren't a `T` you can put in a cell. The store gives us a
  * single seam for both.
  */
-import { isDarkMode } from "perry/system";
-import { isLinux, isMacOS, isWindows } from "../platform/index.js";
-import type { AppConfig, ThemeMode } from "../types/index.js";
-import type { ConfigService } from "../services/config-service.js";
-import type { RecentFilesService } from "../services/recent-files-service.js";
+import { isDarkMode } from 'perry/system';
+import { isLinux, isMacOS, isWindows } from '../platform/index.js';
+import type { AppConfig, ThemeMode } from '../types/index.js';
+import type { ConfigService } from '../services/config-service.js';
+import type { RecentFilesService } from '../services/recent-files-service.js';
 
 /** The three modules the sidebar can route to. */
-export type Route = "file-manager" | "settings" | "about";
+export type Route = 'file-manager' | 'settings' | 'about';
 
 /** A concrete palette selection, derived from the config + system. */
-export type ResolvedTheme = "light" | "dark";
+export type ResolvedTheme = 'light' | 'dark';
 
 /** Immutable snapshot of the store. Consumers must not mutate. */
 export interface AppState {
@@ -48,18 +48,18 @@ export interface AppState {
 export type StoreListener = (state: AppState) => void;
 
 const INITIAL: AppState = {
-    route: "file-manager",
+    route: 'file-manager',
     config: {
         version: 1,
-        theme: "system",
+        theme: 'system',
         autostart: false,
         notifications: true,
         backgroundMode: false,
-        lastFolder: "",
+        lastFolder: '',
         fontSize: 13,
-        displayName: "",
+        displayName: '',
     },
-    resolvedTheme: "light",
+    resolvedTheme: 'light',
     recentFiles: [],
     lastError: null,
     isBusy: false,
@@ -68,8 +68,6 @@ const INITIAL: AppState = {
 export class AppStore {
     private state: AppState = INITIAL;
     private readonly listeners: Set<StoreListener> = new Set();
-    private readonly configListeners: Set<() => void> = new Set();
-    private readonly recentListeners: Set<() => void> = new Set();
     private readonly configUnsub: () => void;
     private readonly recentFiles: RecentFilesService;
 
@@ -155,7 +153,7 @@ export class AppStore {
                 l(this.state);
             } catch (err) {
                 // Listeners must not break the dispatcher.
-                console.error("store listener threw:", err);
+                console.error('store listener threw:', err);
             }
         }
     }
@@ -172,19 +170,25 @@ export class AppStore {
  * concrete light / dark.
  */
 export function resolveTheme(theme: ThemeMode): ResolvedTheme {
-    if (theme === "light") {
-        return "light";
+    if (theme === 'light') {
+        return 'light';
     }
-    if (theme === "dark") {
-        return "dark";
+    if (theme === 'dark') {
+        return 'dark';
     }
-    return isDarkMode() ? "dark" : "light";
+    return isDarkMode() ? 'dark' : 'light';
 }
 
 /** A tiny standalone helper used by the about module. */
 export function describePlatform(): string {
-    if (isMacOS()) return "macOS";
-    if (isWindows()) return "Windows";
-    if (isLinux()) return "Linux";
-    return "Unknown";
+    if (isMacOS()) {
+        return 'macOS';
+    }
+    if (isWindows()) {
+        return 'Windows';
+    }
+    if (isLinux()) {
+        return 'Linux';
+    }
+    return 'Unknown';
 }

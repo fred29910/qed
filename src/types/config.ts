@@ -5,7 +5,7 @@
  * older configs without crashing. The runtime is free to add new fields
  * to `AppConfig` as long as the default value satisfies the type.
  */
-export type ThemeMode = "system" | "light" | "dark";
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 /** User-facing config. */
 export interface AppConfig {
@@ -30,11 +30,11 @@ export interface AppConfig {
 /** Default config. Used when no file is present or the file is corrupt. */
 export const DEFAULT_CONFIG: AppConfig = {
     version: 1,
-    theme: "system",
+    theme: 'system',
     autostart: false,
     notifications: true,
     backgroundMode: false,
-    lastFolder: "",
+    lastFolder: '',
     fontSize: 13,
-    displayName: "",
+    displayName: '',
 };

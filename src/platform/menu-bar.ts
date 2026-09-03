@@ -26,30 +26,30 @@ import {
     menuAddItem,
     menuAddSeparator,
     menuCreate,
-} from "perry/ui";
-import { isMacOS, platformLabel } from "./platform.js";
+} from 'perry/ui';
+import { isMacOS, platformLabel } from './platform.js';
 
 /** Commands the menu / shortcuts can fire. The host binds these to handlers. */
 export type AppCommand =
-    | "app.about"
-    | "app.preferences"
-    | "app.hide"
-    | "app.hideOthers"
-    | "app.showAll"
-    | "app.quit"
-    | "file.new"
-    | "file.open"
-    | "file.save"
-    | "edit.undo"
-    | "edit.redo"
-    | "edit.cut"
-    | "edit.copy"
-    | "edit.paste"
-    | "edit.selectAll"
-    | "view.toggleTheme"
-    | "view.toggleAlwaysOnTop"
-    | "help.docs"
-    | "help.openLogDir";
+    | 'app.about'
+    | 'app.preferences'
+    | 'app.hide'
+    | 'app.hideOthers'
+    | 'app.showAll'
+    | 'app.quit'
+    | 'file.new'
+    | 'file.open'
+    | 'file.save'
+    | 'edit.undo'
+    | 'edit.redo'
+    | 'edit.cut'
+    | 'edit.copy'
+    | 'edit.paste'
+    | 'edit.selectAll'
+    | 'view.toggleTheme'
+    | 'view.toggleAlwaysOnTop'
+    | 'help.docs'
+    | 'help.openLogDir';
 
 /** Callback invoked when the user picks a menu item. */
 export type CommandHandler = (command: AppCommand) => void;
@@ -92,45 +92,45 @@ function installMacOSMenu(handler: CommandHandler): void {
 
     // ---- App menu (bold, contains About / Quit / Hide) ----
     const appMenu = menuCreate();
-    menuAddItem(appMenu, `About ${platformLabel()}`, () => handler("app.about"));
+    menuAddItem(appMenu, `About ${platformLabel()}`, () => handler('app.about'));
     menuAddSeparator(appMenu);
-    menuAddItem(appMenu, "Hide", () => handler("app.hide"));
-    menuAddItem(appMenu, "Hide Others", () => handler("app.hideOthers"));
-    menuAddItem(appMenu, "Show All", () => handler("app.showAll"));
+    menuAddItem(appMenu, 'Hide', () => handler('app.hide'));
+    menuAddItem(appMenu, 'Hide Others', () => handler('app.hideOthers'));
+    menuAddItem(appMenu, 'Show All', () => handler('app.showAll'));
     menuAddSeparator(appMenu);
-    menuAddItem(appMenu, "Quit", () => handler("app.quit"));
+    menuAddItem(appMenu, 'Quit', () => handler('app.quit'));
     menuBarAddMenu(bar, platformLabel(), appMenu);
 
     // ---- File ----
     const fileMenu = menuCreate();
-    menuAddItem(fileMenu, "New", () => handler("file.new"));
-    menuAddItem(fileMenu, "Open…", () => handler("file.open"));
-    menuAddItem(fileMenu, "Save", () => handler("file.save"));
-    menuBarAddMenu(bar, "File", fileMenu);
+    menuAddItem(fileMenu, 'New', () => handler('file.new'));
+    menuAddItem(fileMenu, 'Open…', () => handler('file.open'));
+    menuAddItem(fileMenu, 'Save', () => handler('file.save'));
+    menuBarAddMenu(bar, 'File', fileMenu);
 
     // ---- Edit ----
     const editMenu = menuCreate();
-    menuAddItem(editMenu, "Undo", () => handler("edit.undo"));
-    menuAddItem(editMenu, "Redo", () => handler("edit.redo"));
+    menuAddItem(editMenu, 'Undo', () => handler('edit.undo'));
+    menuAddItem(editMenu, 'Redo', () => handler('edit.redo'));
     menuAddSeparator(editMenu);
-    menuAddItem(editMenu, "Cut", () => handler("edit.cut"));
-    menuAddItem(editMenu, "Copy", () => handler("edit.copy"));
-    menuAddItem(editMenu, "Paste", () => handler("edit.paste"));
-    menuAddItem(editMenu, "Select All", () => handler("edit.selectAll"));
-    menuBarAddMenu(bar, "Edit", editMenu);
+    menuAddItem(editMenu, 'Cut', () => handler('edit.cut'));
+    menuAddItem(editMenu, 'Copy', () => handler('edit.copy'));
+    menuAddItem(editMenu, 'Paste', () => handler('edit.paste'));
+    menuAddItem(editMenu, 'Select All', () => handler('edit.selectAll'));
+    menuBarAddMenu(bar, 'Edit', editMenu);
 
     // ---- View ----
     const viewMenu = menuCreate();
-    menuAddItem(viewMenu, "Toggle Theme", () => handler("view.toggleTheme"));
-    menuAddItem(viewMenu, "Toggle Always On Top", () => handler("view.toggleAlwaysOnTop"));
-    menuBarAddMenu(bar, "View", viewMenu);
+    menuAddItem(viewMenu, 'Toggle Theme', () => handler('view.toggleTheme'));
+    menuAddItem(viewMenu, 'Toggle Always On Top', () => handler('view.toggleAlwaysOnTop'));
+    menuBarAddMenu(bar, 'View', viewMenu);
 
     // ---- Help ----
     const helpMenu = menuCreate();
-    menuAddItem(helpMenu, "Open Log Folder", () => handler("help.openLogDir"));
+    menuAddItem(helpMenu, 'Open Log Folder', () => handler('help.openLogDir'));
     menuAddSeparator(helpMenu);
-    menuAddItem(helpMenu, "Documentation", () => handler("help.docs"));
-    menuBarAddMenu(bar, "Help", helpMenu);
+    menuAddItem(helpMenu, 'Documentation', () => handler('help.docs'));
+    menuBarAddMenu(bar, 'Help', helpMenu);
 
     menuBarAttach(bar);
 }
@@ -141,39 +141,39 @@ function installDesktopMenu(handler: CommandHandler): void {
 
     // ---- File ----
     const fileMenu = menuCreate();
-    menuAddItem(fileMenu, "New", () => handler("file.new"));
-    menuAddItem(fileMenu, "Open…", () => handler("file.open"));
-    menuAddItem(fileMenu, "Save", () => handler("file.save"));
+    menuAddItem(fileMenu, 'New', () => handler('file.new'));
+    menuAddItem(fileMenu, 'Open…', () => handler('file.open'));
+    menuAddItem(fileMenu, 'Save', () => handler('file.save'));
     menuAddSeparator(fileMenu);
-    menuAddItem(fileMenu, "Preferences…", () => handler("app.preferences"));
+    menuAddItem(fileMenu, 'Preferences…', () => handler('app.preferences'));
     menuAddSeparator(fileMenu);
-    menuAddItem(fileMenu, "Exit", () => handler("app.quit"));
-    menuBarAddMenu(bar, "File", fileMenu);
+    menuAddItem(fileMenu, 'Exit', () => handler('app.quit'));
+    menuBarAddMenu(bar, 'File', fileMenu);
 
     // ---- Edit ----
     const editMenu = menuCreate();
-    menuAddItem(editMenu, "Undo", () => handler("edit.undo"));
-    menuAddItem(editMenu, "Redo", () => handler("edit.redo"));
+    menuAddItem(editMenu, 'Undo', () => handler('edit.undo'));
+    menuAddItem(editMenu, 'Redo', () => handler('edit.redo'));
     menuAddSeparator(editMenu);
-    menuAddItem(editMenu, "Cut", () => handler("edit.cut"));
-    menuAddItem(editMenu, "Copy", () => handler("edit.copy"));
-    menuAddItem(editMenu, "Paste", () => handler("edit.paste"));
-    menuAddItem(editMenu, "Select All", () => handler("edit.selectAll"));
-    menuBarAddMenu(bar, "Edit", editMenu);
+    menuAddItem(editMenu, 'Cut', () => handler('edit.cut'));
+    menuAddItem(editMenu, 'Copy', () => handler('edit.copy'));
+    menuAddItem(editMenu, 'Paste', () => handler('edit.paste'));
+    menuAddItem(editMenu, 'Select All', () => handler('edit.selectAll'));
+    menuBarAddMenu(bar, 'Edit', editMenu);
 
     // ---- View ----
     const viewMenu = menuCreate();
-    menuAddItem(viewMenu, "Toggle Theme", () => handler("view.toggleTheme"));
-    menuAddItem(viewMenu, "Toggle Always On Top", () => handler("view.toggleAlwaysOnTop"));
-    menuBarAddMenu(bar, "View", viewMenu);
+    menuAddItem(viewMenu, 'Toggle Theme', () => handler('view.toggleTheme'));
+    menuAddItem(viewMenu, 'Toggle Always On Top', () => handler('view.toggleAlwaysOnTop'));
+    menuBarAddMenu(bar, 'View', viewMenu);
 
     // ---- Help ----
     const helpMenu = menuCreate();
-    menuAddItem(helpMenu, "About", () => handler("app.about"));
+    menuAddItem(helpMenu, 'About', () => handler('app.about'));
     menuAddSeparator(helpMenu);
-    menuAddItem(helpMenu, "Open Log Folder", () => handler("help.openLogDir"));
-    menuAddItem(helpMenu, "Documentation", () => handler("help.docs"));
-    menuBarAddMenu(bar, "Help", helpMenu);
+    menuAddItem(helpMenu, 'Open Log Folder', () => handler('help.openLogDir'));
+    menuAddItem(helpMenu, 'Documentation', () => handler('help.docs'));
+    menuBarAddMenu(bar, 'Help', helpMenu);
 
     menuBarAttach(bar);
 }

@@ -9,9 +9,9 @@
  * file is testable in isolation, but the barrel hides that from the
  * controller / module layer.
  */
-export * from "./platform.js";
-export * from "./paths.js";
-export * from "./fs-permissions.js";
-export * from "./autostart.js";
-export * from "./menu-bar.js";
-export * from "./tray-adapter.js";
+export * from './platform.js';
+export * from './paths.js';
+export * from './fs-permissions.js';
+export * from './autostart.js';
+export * from './menu-bar.js';
+export * from './tray-adapter.js';

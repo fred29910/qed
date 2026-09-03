@@ -9,10 +9,10 @@
  * schema, we copy unknown fields into the new config (forward-compat)
  * and overwrite the file with the new shape.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { dirname } from "path";
-import { configFilePath, explainFsError } from "../platform/index.js";
-import { DEFAULT_CONFIG, type AppConfig, type ThemeMode } from "../types/index.js";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname } from 'path';
+import { configFilePath, explainFsError } from '../platform/index.js';
+import { DEFAULT_CONFIG, type AppConfig, type ThemeMode } from '../types/index.js';
 
 /** Current schema version. */
 const SCHEMA_VERSION = 1 as const;
@@ -81,7 +81,7 @@ export class ConfigService {
                 l(snapshot);
             } catch (err) {
                 // Listeners must not break the dispatcher — log and continue.
-                console.error("config listener threw:", err);
+                console.error('config listener threw:', err);
             }
         }
     }
@@ -97,7 +97,7 @@ export class ConfigService {
             try {
                 writeToDisk(this.state);
             } catch (err) {
-                console.error("config flush failed:", explainFsError(err));
+                console.error('config flush failed:', explainFsError(err));
             }
         }, 250) as unknown as number;
     }
@@ -113,14 +113,14 @@ function loadFromDisk(): AppConfig {
         return cloneConfig(DEFAULT_CONFIG);
     }
     try {
-        const raw = readFileSync(path, "utf-8") as string;
+        const raw = readFileSync(path, 'utf-8') as string;
         const parsed = JSON.parse(raw) as unknown;
         if (!isPlainObject(parsed)) {
             return cloneConfig(DEFAULT_CONFIG);
         }
         return mergeWithDefaults(parsed);
     } catch (err) {
-        console.error("config load failed; using defaults:", explainFsError(err));
+        console.error('config load failed; using defaults:', explainFsError(err));
         return cloneConfig(DEFAULT_CONFIG);
     }
 }
@@ -129,7 +129,7 @@ function writeToDisk(state: AppConfig): void {
     const path = configFilePath();
     mkdirSync(dirname(path), { recursive: true });
     const body = JSON.stringify(state, null, 2);
-    writeFileSync(path, body, "utf-8");
+    writeFileSync(path, body, 'utf-8');
 }
 
 /* ---------------------------------------------------------------- *
@@ -142,41 +142,45 @@ function mergeWithDefaults(raw: Record<string, unknown>): AppConfig {
     // (forward-compat: the new build doesn't know what to do with them
     // yet, so we don't trust them).
     const merged: AppConfig = { ...DEFAULT_CONFIG };
-    if (typeof raw["theme"] === "string") {
-        const t = raw["theme"];
-        if (t === "system" || t === "light" || t === "dark") {
+    if (typeof raw['theme'] === 'string') {
+        const t = raw['theme'];
+        if (t === 'system' || t === 'light' || t === 'dark') {
             (merged as { theme: ThemeMode }).theme = t;
         }
     }
-    if (typeof raw["autostart"] === "boolean") {
-        (merged as { autostart: boolean }).autostart = raw["autostart"];
+    if (typeof raw['autostart'] === 'boolean') {
+        (merged as { autostart: boolean }).autostart = raw['autostart'];
     }
-    if (typeof raw["notifications"] === "boolean") {
-        (merged as { notifications: boolean }).notifications = raw["notifications"];
+    if (typeof raw['notifications'] === 'boolean') {
+        (merged as { notifications: boolean }).notifications = raw['notifications'];
     }
-    if (typeof raw["backgroundMode"] === "boolean") {
-        (merged as { backgroundMode: boolean }).backgroundMode = raw["backgroundMode"];
+    if (typeof raw['backgroundMode'] === 'boolean') {
+        (merged as { backgroundMode: boolean }).backgroundMode = raw['backgroundMode'];
     }
-    if (typeof raw["lastFolder"] === "string") {
-        (merged as { lastFolder: string }).lastFolder = raw["lastFolder"];
+    if (typeof raw['lastFolder'] === 'string') {
+        (merged as { lastFolder: string }).lastFolder = raw['lastFolder'];
     }
-    if (typeof raw["fontSize"] === "number" && Number.isFinite(raw["fontSize"])) {
-        (merged as { fontSize: number }).fontSize = clampFontSize(raw["fontSize"]);
+    if (typeof raw['fontSize'] === 'number' && Number.isFinite(raw['fontSize'])) {
+        (merged as { fontSize: number }).fontSize = clampFontSize(raw['fontSize']);
     }
-    if (typeof raw["displayName"] === "string") {
-        (merged as { displayName: string }).displayName = raw["displayName"];
+    if (typeof raw['displayName'] === 'string') {
+        (merged as { displayName: string }).displayName = raw['displayName'];
     }
     return merged;
 }
 
 function clampFontSize(n: number): number {
-    if (n < 8) return 8;
-    if (n > 48) return 48;
+    if (n < 8) {
+        return 8;
+    }
+    if (n > 48) {
+        return 48;
+    }
     return Math.round(n);
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
-    return typeof v === "object" && v !== null && !Array.isArray(v);
+    return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
 function cloneConfig(c: AppConfig): AppConfig {

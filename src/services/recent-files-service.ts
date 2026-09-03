@@ -5,9 +5,9 @@
  * sidebar can offer quick re-entry. Stored as a JSON array at
  * `appDataDir()/recent-files.json`.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { dirname } from "path";
-import { explainFsError, recentFilesPath } from "../platform/index.js";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname } from 'path';
+import { explainFsError, recentFilesPath } from '../platform/index.js';
 
 /** Maximum number of recent paths we remember. */
 const MAX_RECENT = 20;
@@ -43,9 +43,9 @@ export class RecentFilesService {
         const path = recentFilesPath();
         try {
             mkdirSync(dirname(path), { recursive: true });
-            writeFileSync(path, JSON.stringify(this.paths, null, 2), "utf-8");
+            writeFileSync(path, JSON.stringify(this.paths, null, 2), 'utf-8');
         } catch (err) {
-            console.error("recent-files flush failed:", explainFsError(err));
+            console.error('recent-files flush failed:', explainFsError(err));
         }
     }
 }
@@ -56,14 +56,14 @@ function loadFromDisk(): string[] {
         return [];
     }
     try {
-        const raw = readFileSync(path, "utf-8") as string;
+        const raw = readFileSync(path, 'utf-8') as string;
         const parsed = JSON.parse(raw) as unknown;
         if (!Array.isArray(parsed)) {
             return [];
         }
-        return parsed.filter((v): v is string => typeof v === "string").slice(0, MAX_RECENT);
+        return parsed.filter((v): v is string => typeof v === 'string').slice(0, MAX_RECENT);
     } catch (err) {
-        console.error("recent-files load failed:", explainFsError(err));
+        console.error('recent-files load failed:', explainFsError(err));
         return [];
     }
 }
