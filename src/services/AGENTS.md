@@ -1,5 +1,7 @@
 # src/services/
 
+**Generated:** 2026-09-03  Parent: ./AGENTS.md  Commit: 1818999
+
 Cross-cutting service layer. Five classes exported through a single
 barrel `index.ts`. This directory is the **only** place in `src/`
 that touches `fs` or `perry/system` directly. Every other module
@@ -10,11 +12,11 @@ goes through `IpcBus` or this barrel.
 ```
 services/
 ├── index.ts                    # barrel: re-exports all five services
-├── config-service.ts           # JSON config persistence (appDataDir/config.json)
+├── config-service.ts           # JSON config persistence (appDataDir/config.json) — schema v2 (added logLevel in 1818999)
 ├── file-service.ts             # FS operations: list/read/write/delete/rename/mkdir/stat
-├── notification-service.ts     # local notifications via perry/system
+├── notification-service.ts     # local notifications via perry/system — uses logger.error on failure
 ├── shell-service.ts            # openURL + revealInFileManager (per-platform)
-└── recent-files-service.ts     # recent-paths registry (appDataDir/recent-files.json)
+└── recent-files-service.ts     # recent-paths registry (appDataDir/recent-files.json) — uses logger.error on failure
 ```
 
 ## Where to Look
@@ -22,11 +24,12 @@ services/
 | Task | File | Notes |
 |---|---|---|
 | Import a service | `../services/` (barrel) | Always import from the barrel, never deep-import a service file. |
-| Config read/write | `config-service.ts` | `snapshot()` returns cloned state; `update(patch)` applies partial, notifies listeners, debounced flush. `flushNow()` for shutdown. |
+| Config read/write | `config-service.ts` | `snapshot()` returns cloned state; `update(patch)` applies partial, notifies listeners, debounced flush. `flushNow()` for shutdown. Migration from v1 → v2 added `logLevel` field. |
 | File operations | `file-service.ts` | Synchronous FS (perry constraint). Refuses >32 MB reads, caps list at 5000 entries. `assertSafePath` blocks NUL bytes. |
 | Open URL / reveal | `shell-service.ts` | `openUrl()` uses `perry/system.openURL`. `revealInFileManager()` dispatches per-OS (`open -R` / `explorer /select,` / `xdg-open`). |
 | Notifications | `notification-service.ts` | **Gated**: returns `false` without sending when `config.notifications` is off. Never call `notificationSend` directly. |
 | Recent files | `recent-files-service.ts` | `add(path)` deduplicates, caps at 20, flushes to disk immediately. `list()` returns most-recent-first snapshot. |
+| Log failures here | `logger.error(category, msg)` | All 12 `console.error` sites in services migrated to `logger.error` in 1818999. |
 
 ## Conventions
 
@@ -34,6 +37,7 @@ services/
 - **Services own their FS.** ConfigService and RecentFilesService read/write their own JSON files. FileService handles all user-facing FS operations. No other module should call `fs` directly.
 - **Notifications are gated.** `NotificationService.send()` checks `config.snapshot().notifications` before dispatching. If the user hasn't opted in, the call is a silent no-op. Don't add a second gate elsewhere.
 - **Services receive dependencies via constructor.** `NotificationService` takes `ConfigService`. Don't import services from each other through side effects; wire them in `main.ts`.
+- **Log via `logger.*` not `console.*`.** The logger is the single logging seam (`src/diag.ts`).
 
 ## Anti-PATTERNS
 
@@ -43,3 +47,4 @@ services/
 - **Don't bypass `assertSafePath`.** FileService guards against NUL bytes and empty paths. Other FS-touching code (if any appears) must apply the same checks or use `fs-permissions.ts` from `src/platform/`.
 - **Don't show notifications without checking preference.** Even if you wrap `NotificationService`, the preference check is inside `send()`. Don't duplicate the gate; don't call `notificationSend` from `perry/system` directly.
 - **Don't write to read-only directories.** `appDataDir()` is the only writable location for config and recent-files. Writes anywhere else must go through `fs-permissions.ts` in `src/platform/`.
+- **Don't use `console.*` for error reporting.** Use `logger.error(category, msg, err?)` — `console.*` is banned project-wide.
