@@ -22,7 +22,7 @@ import { paintMuted, paintText, paintDanger, paintAccent, paintSuccess } from '.
  * underneath. Used to break a settings form into "Appearance",
  * "Behaviour", etc.
  */
-export function Section(title: string, children: readonly Widget[]): Widget {
+export function Section(title: string, children: Widget[]): Widget {
     return VStack(8, [Text(title), Divider(), VStack(8, children)]);
 }
 
@@ -77,7 +77,7 @@ export function Badge(text: string, kind: BadgeKind = 'info'): Widget {
 export { Divider, Text, HStack, VStack };
 
 /** Wrap a list of buttons in a horizontal row with a fixed gap. */
-export function ButtonRow(buttons: readonly Widget[], gap = 8): Widget {
+export function ButtonRow(buttons: Widget[], gap = 8): Widget {
     return HStack(gap, buttons);
 }
 

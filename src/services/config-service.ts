@@ -129,7 +129,7 @@ function writeToDisk(state: AppConfig): void {
     const path = configFilePath();
     mkdirSync(dirname(path), { recursive: true });
     const body = JSON.stringify(state, null, 2);
-    writeFileSync(path, body, 'utf-8');
+    writeFileSync(path, body);
 }
 
 /* ---------------------------------------------------------------- *

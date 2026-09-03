@@ -1,6 +1,7 @@
 # Perry build outputs
 dist/
 *.o
+bin/
 
 # Generated type stubs (regenerate with `perry types`)
 .perry/types/

@@ -56,7 +56,7 @@ export function checkFsAccess(path: string, tryWriteProbe: boolean): FsAccess {
     try {
         // The probe is intentionally minimal — we only need to know if the
         // filesystem will let us open the path for writing.
-        writeFileSync(probePath, 'ok', { flag: 'w' });
+        writeFileSync(probePath, 'ok');
         unlinkSync(probePath);
         return { ok: true };
     } catch (err) {

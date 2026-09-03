@@ -47,7 +47,7 @@ export function enableAutostart(execPath?: string): void {
     mkdirSync(dirname(manifest), { recursive: true });
     const kind = getHostKind();
     const body = renderManifest(kind, target);
-    writeFileSync(manifest, body, { encoding: 'utf-8' });
+    writeFileSync(manifest, body);
 }
 
 /** Disable autostart by removing the manifest, if present. */

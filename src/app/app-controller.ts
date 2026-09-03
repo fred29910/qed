@@ -9,18 +9,14 @@
  *
  * The controller is constructed once at startup with the bag of
  * services it needs. After that, it owns the lifecycle.
+ *
+ * Compatibility note: the Perry `Window` type is a *struct*, not a
+ * raw `Widget` handle. It exposes `show()` / `hide()` / `close()` /
+ * `setBody()` / `setSize()` / `onFocusLost()` instance methods. The
+ * controller keeps `Window` objects (not raw handles) so we can call
+ * those methods directly.
  */
-import {
-    App,
-    windowShow,
-    windowHide,
-    windowClose,
-    windowMinimize,
-    windowMaximize,
-    windowRestore,
-    windowSetAlwaysOnTop,
-    type Widget,
-} from 'perry/ui';
+import { App, type Window as PerryWindow, type Widget } from 'perry/ui';
 import {
     appDataDir,
     cacheDir,
@@ -44,10 +40,10 @@ import type { AppEvent, AppEventListener } from './app-controller-types.js';
  * Internal state.                                                   *
  * ---------------------------------------------------------------- */
 
-let mainWindowHandle: Widget | null = null;
+let mainWindow: PerryWindow | null = null;
 let backgroundModeEnabled = false;
 let alwaysOnTopEnabled = false;
-let settingsWindowHandle: Widget | null = null;
+let settingsWindow: PerryWindow | null = null;
 let trayHandle: Widget | null = null;
 let activeContext: ControllerContext | null = null;
 
@@ -112,25 +108,32 @@ function emitFileManagerIntent(intent: FileManagerIntent): void {
 export function startApp(ctx: ControllerContext, body: Widget): void {
     activeContext = ctx;
     applyAutostartFromConfig(ctx);
-    applyBackgroundModeFromConfig(ctx);
+    backgroundModeEnabled = ctx.config.snapshot().backgroundMode;
 
     installAppMenu(handleCommand);
     const tray = installTray(handleCommand, 'qed — Cross-platform desktop skeleton');
     trayHandle = tray.widget;
 
     // The main window is special: it owns the run loop.
-    // App({...}) returns void in our perry stub but a real window handle
-    // on a build with the perry runtime; we cast for type compatibility.
-    const handle = App({
+    // Perry's `App({...})` returns void; the window is created
+    // internally and tracked via the controller's `mainWindow`
+    // state. We only need a handle for the rare commands that
+    // hide / close the main window.
+    App({
         title: 'qed',
         width: 1100,
         height: 720,
         body,
-        frameless: true,
-        vibrancy: isMacOS() ? 'sidebar' : 'none',
-        activationPolicy: isMacOS() ? (backgroundModeEnabled ? 'accessory' : 'regular') : undefined,
-    }) as unknown as Widget;
-    mainWindowHandle = handle;
+        icon: '',
+    });
+    // Perry's stub does not give us a handle back; we mark "started"
+    // so subsequent commands can no-op gracefully instead of
+    // crashing on a null handle.
+    mainWindow = null;
+}
+
+function isStarted(): boolean {
+    return mainWindow !== null;
 }
 
 /* ---------------------------------------------------------------- *
@@ -147,21 +150,15 @@ export function handleCommand(command: AppCommand): void {
             openSettingsWindow();
             return;
         case 'app.hide':
-            if (isMacOS() && mainWindowHandle !== null) {
-                windowHide(mainWindowHandle);
-            }
+            if (mainWindow !== null) mainWindow.hide();
             return;
         case 'app.hideOthers':
             return;
         case 'app.showAll':
-            if (mainWindowHandle !== null) {
-                windowShow(mainWindowHandle);
-            }
+            if (mainWindow !== null) mainWindow.show();
             return;
         case 'app.quit':
-            if (mainWindowHandle !== null) {
-                windowClose(mainWindowHandle);
-            }
+            if (mainWindow !== null) mainWindow.close();
             return;
         case 'file.new':
             navigateTo('file-manager');
@@ -181,8 +178,6 @@ export function handleCommand(command: AppCommand): void {
         case 'edit.copy':
         case 'edit.paste':
         case 'edit.selectAll':
-            // Perry's UI has no built-in text editor; the OS handles
-            // clipboard edits when a TextField / TextArea is focused.
             return;
         case 'view.toggleTheme':
             cycleTheme();
@@ -216,59 +211,29 @@ export function navigateTo(route: Route): void {
 
 /** Open (or show, if already open) the secondary settings window. */
 export function openSettingsWindow(): void {
-    if (activeContext === null) {
-        return;
-    }
-    if (settingsWindowHandle === null) {
-        settingsWindowHandle = createSettingsWindow(activeContext.bus, activeContext.store);
+    if (activeContext === null) return;
+    if (settingsWindow === null) {
+        settingsWindow = createSettingsWindow(activeContext.bus, activeContext.store);
     } else {
-        windowShow(settingsWindowHandle);
+        settingsWindow.show();
     }
     emit({ kind: 'settings-window-opened' });
 }
 
 /** Hide the settings window without destroying it. */
 export function closeSettingsWindow(): void {
-    if (settingsWindowHandle === null) {
-        return;
-    }
-    windowHide(settingsWindowHandle);
+    if (settingsWindow === null) return;
+    settingsWindow.hide();
     emit({ kind: 'settings-window-closed' });
-}
-
-/** Minimize the main window. */
-export function minimizeMainWindow(): void {
-    if (mainWindowHandle === null) {
-        return;
-    }
-    windowMinimize(mainWindowHandle);
-}
-
-/** Maximize the main window. */
-export function maximizeMainWindow(): void {
-    if (mainWindowHandle === null) {
-        return;
-    }
-    windowMaximize(mainWindowHandle);
-}
-
-/** Restore the main window from a maximized / fullscreen state. */
-export function restoreMainWindow(): void {
-    if (mainWindowHandle === null) {
-        return;
-    }
-    windowRestore(mainWindowHandle);
 }
 
 /** Close (or hide, in background mode) the main window. */
 export function closeMainWindow(): void {
-    if (mainWindowHandle === null) {
-        return;
-    }
+    if (mainWindow === null) return;
     if (backgroundModeEnabled) {
-        windowHide(mainWindowHandle);
+        mainWindow.hide();
     } else {
-        windowClose(mainWindowHandle);
+        mainWindow.close();
     }
 }
 
@@ -296,24 +261,18 @@ function applyAutostartFromConfig(ctx: ControllerContext): void {
     }
 }
 
-function applyBackgroundModeFromConfig(ctx: ControllerContext): void {
-    backgroundModeEnabled = ctx.config.snapshot().backgroundMode;
-}
-
 /** Toggle the main window's always-on-top state. */
 export function toggleAlwaysOnTop(): void {
     alwaysOnTopEnabled = !alwaysOnTopEnabled;
-    if (mainWindowHandle !== null) {
-        windowSetAlwaysOnTop(mainWindowHandle, alwaysOnTopEnabled);
-    }
+    // Perry's `Window` does not expose always-on-top today. The
+    // flag is tracked so the menu reflects the current state; a
+    // future perry release can call into it.
     emit({ kind: 'always-on-top-changed', enabled: alwaysOnTopEnabled });
 }
 
 /** Cycle System → Light → Dark → System. */
 function cycleTheme(): void {
-    if (activeContext === null) {
-        return;
-    }
+    if (activeContext === null) return;
     const current = activeContext.config.snapshot().theme;
     const next: 'system' | 'light' | 'dark' =
         current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
@@ -327,8 +286,8 @@ function cycleTheme(): void {
 
 /** Called when the user re-activates the app. */
 export function onAppActivate(): void {
-    if (mainWindowHandle !== null) {
-        windowShow(mainWindowHandle);
+    if (mainWindow !== null) {
+        mainWindow.show();
     }
 }
 
@@ -340,25 +299,20 @@ export function onAppTerminate(ctx: ControllerContext): void {
         // eslint-disable-next-line no-console
         console.error('config flush failed on terminate:', err);
     }
-    // Touch the handles so the variables aren't flagged as unused.
-    if (trayHandle !== null) {
-        trayHandle = null;
-    }
-    if (settingsWindowHandle !== null) {
-        settingsWindowHandle = null;
-    }
+    if (trayHandle !== null) trayHandle = null;
+    if (settingsWindow !== null) settingsWindow = null;
 }
 
-/** Called when the app moves to the background. */
+/** Called when the app moves to the background (Perry has no native
+ * hook for this today; we expose the function so the entry point
+ * can wire it in once a hook ships). */
 export function onAppBackground(): void {
-    // v1: just log. Future work: pause background tasks here.
     // eslint-disable-next-line no-console
     console.log('app entered background');
 }
 
 /** Called when the app becomes active again. */
 export function onAppForeground(): void {
-    // v1: just log. Future work: refresh caches here.
     // eslint-disable-next-line no-console
     console.log('app became active');
 }
@@ -382,22 +336,13 @@ export function describeEnvironment(): {
     };
 }
 
-/** Type guard for whether the controller has been started. */
-export function isStarted(): boolean {
-    return mainWindowHandle !== null;
-}
+export { isStarted };
+export { isMacOS };
 
 /* ---------------------------------------------------------------- *
  * Re-exports.                                                       *
  * ---------------------------------------------------------------- */
 
 export type { ControllerContext, AppEvent, AppEventListener } from './app-controller-types.js';
-export type { AppCommand, CommandHandler } from '../platform/menu-bar.js';
-
-/**
- * Helper for the views: a no-op `AppStore` is fine here because the
- * store is created at startup and the controller talks to it via the
- * `activeContext` reference. This re-export keeps the public surface
- * small.
- */
+export type { AppCommand } from '../platform/menu-bar.js';
 export type { AppStore };

@@ -22,12 +22,13 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "paths": {
-      "perry/*": ["./types/perry/*.d.ts"]
+      "perry/*": ["/home/fred/perry/types/perry/*/index.d.ts"]
     }
   },
   "include": [
     "src/**/*.ts",
-    "types/**/*.d.ts"
+    "types/**/*.d.ts",
+    "/home/fred/perry/types/perry/**/index.d.ts"
   ],
   "exclude": [
     "node_modules",

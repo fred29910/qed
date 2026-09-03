@@ -15,9 +15,22 @@
  *   - Section: About
  *       Version / platform label
  */
-import { Button, HStack, Picker, Slider, Text, TextField, Toggle, VStack, type Widget } from 'perry/ui';
+import {
+    Button,
+    HStack,
+    Picker,
+    Slider,
+    Text,
+    TextField,
+    Toggle,
+    VStack,
+    pickerAddItem,
+    pickerSetSelected,
+    textfieldSetString,
+    toggleSetState,
+    type Widget,
+} from 'perry/ui';
 import type { IpcBus } from '../../ipc/bus.js';
-import type { ThemeMode } from '../../types/index.js';
 import type { AppStore } from '../../state/app-state.js';
 import { describeEnvironment } from '../../app/app-controller.js';
 import { applyTheme, paintMuted, paintText } from '../../ui/theme.js';
@@ -33,28 +46,41 @@ export function SettingsView(bus: IpcBus, store: AppStore): Widget {
     /* ---------------------------------------------------------------- *
      * Appearance.                                                       *
      * ---------------------------------------------------------------- */
-    const themePicker = Picker<ThemeMode>(
-        [
-            { value: 'system', label: 'Follow system' },
-            { value: 'light', label: 'Light' },
-            { value: 'dark', label: 'Dark' },
-        ],
-        cfg.theme,
-        (v) => {
-            void bus.send('config:update', { patch: { theme: v } });
-        },
-    );
-    const fontSizeSlider = Slider(8, 48, cfg.fontSize, (v) => {
-        void bus.send('config:update', { patch: { fontSize: v } });
+    // Perry's Picker is index-driven. The three theme options are
+    // added in cfg.theme order: system=0, light=1, dark=2.
+    const themeIndex = cfg.theme === 'system' ? 0 : cfg.theme === 'light' ? 1 : 2;
+    const themePicker = Picker((index) => {
+        const next: 'system' | 'light' | 'dark' =
+            index === 0 ? 'system' : index === 1 ? 'light' : 'dark';
+        void bus.send('config:update', { patch: { theme: next } });
     });
-    const displayNameField = TextField(cfg.displayName, (v) => {
+    pickerAddItem(themePicker, 'Follow system');
+    pickerAddItem(themePicker, 'Light');
+    pickerAddItem(themePicker, 'Dark');
+    pickerSetSelected(themePicker, themeIndex);
+
+    // Slider has no initial value in the Perry API; the onChange
+    // will fire as the user drags. We read the current value out of
+    // the slider on first paint via the typed accessor.
+    const fontSizeSlider = Slider(8, 48, (v) => {
+        void bus.send('config:update', { patch: { fontSize: Math.round(v) } });
+    });
+
+    // TextField takes a placeholder, not a value, in the Perry API.
+    // The current value lives in the config; users editing the
+    // field drive `onChange`.
+    const displayNameField = TextField('Display name', (v) => {
         void bus.send('config:update', { patch: { displayName: v } });
     });
+    // Initialise the field with the persisted value (if any).
+    if (cfg.displayName.length > 0) {
+        textfieldSetString(displayNameField, cfg.displayName);
+    }
 
     /* ---------------------------------------------------------------- *
      * Behaviour.                                                        *
      * ---------------------------------------------------------------- */
-    const autostartToggle = Toggle('Launch at login', cfg.autostart, (v) => {
+    const autostartToggle = Toggle('Launch at login', (v) => {
         void bus.send('config:update', { patch: { autostart: v } });
         if (v) {
             try {
@@ -72,12 +98,17 @@ export function SettingsView(bus: IpcBus, store: AppStore): Widget {
             }
         }
     });
-    const notificationsToggle = Toggle('Show notifications', cfg.notifications, (v) => {
+    toggleSetState(autostartToggle, cfg.autostart ? 1 : 0);
+
+    const notificationsToggle = Toggle('Show notifications', (v) => {
         void bus.send('config:update', { patch: { notifications: v } });
     });
-    const backgroundToggle = Toggle('Background mode', cfg.backgroundMode, (v) => {
+    toggleSetState(notificationsToggle, cfg.notifications ? 1 : 0);
+
+    const backgroundToggle = Toggle('Background mode', (v) => {
         void bus.send('config:update', { patch: { backgroundMode: v } });
     });
+    toggleSetState(backgroundToggle, cfg.backgroundMode ? 1 : 0);
 
     /* ---------------------------------------------------------------- *
      * Storage.                                                          *

@@ -61,7 +61,7 @@
     "@nodelib/fs.stat" "2.0.5"
     run-parallel "^1.1.9"
 
-"@nodelib/fs.stat@^2.0.2", "@nodelib/fs.stat@2.0.5":
+"@nodelib/fs.stat@2.0.5", "@nodelib/fs.stat@^2.0.2":
   version "2.0.5"
   resolved "https://registry.npmjs.org/@nodelib/fs.stat/-/fs.stat-2.0.5.tgz"
   integrity sha512-RkhPPp2zrqDAQA/2jNhnztcPAlv64XdhIp7a7454A5ovI7Bukxgt7MX7udwAu3zg1DcpPU0rz3VV1SeaqvY4+A==
@@ -74,10 +74,40 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@perryts/perry-darwin-arm64@0.5.1220":
+  version "0.5.1220"
+  resolved "https://registry.yarnpkg.com/@perryts/perry-darwin-arm64/-/perry-darwin-arm64-0.5.1220.tgz#44cd077f67a9e0648cba6382f8fe20df9e620ae3"
+  integrity sha512-5FLa1ciHZwLZVtoecQqhiJ6K7pGjzcBay9y5DiDuSX4+7R4EJDmx9oXKXDXKz1xv5q00seMcLAZkIMQj/hyquw==
+
+"@perryts/perry-darwin-x64@0.5.1220":
+  version "0.5.1220"
+  resolved "https://registry.yarnpkg.com/@perryts/perry-darwin-x64/-/perry-darwin-x64-0.5.1220.tgz#6b73c0bf4017b7d7409dee5e94d5b4d09fa06ead"
+  integrity sha512-ZVJPZT+NKLf5dWejqOVYoElJGOap0Ic9FEjy4qiTC2IMnZ+5xtxkRMinpEVv61TdAf1pRWAFYw5CzHI88WFvzQ==
+
+"@perryts/perry-linux-arm64-musl@0.5.1220":
+  version "0.5.1220"
+  resolved "https://registry.yarnpkg.com/@perryts/perry-linux-arm64-musl/-/perry-linux-arm64-musl-0.5.1220.tgz#9b0868d91dd1ed494e3199088bd6c16044e87014"
+  integrity sha512-rizM9uW3wyBQc1VS7rJaWO0XYeH1dSGI0NC9FBxv3/CT31nniyYQEShGhHKTd6gaisxJNSC/rwqhEqy5NQi3iw==
+
+"@perryts/perry-linux-arm64@0.5.1220":
+  version "0.5.1220"
+  resolved "https://registry.yarnpkg.com/@perryts/perry-linux-arm64/-/perry-linux-arm64-0.5.1220.tgz#c25d88ad11d2977c43a58fc0fe75787bd0e68f5d"
+  integrity sha512-qJeup8XTMstoXWDrREZCmhQjqnwJlML3zmBZLhKp3nNRTzn3cEhQFUempEtL3++M2MQjP3CLmzgMh+ZHGZUO7Q==
+
+"@perryts/perry-linux-x64-musl@0.5.1220":
+  version "0.5.1220"
+  resolved "https://registry.yarnpkg.com/@perryts/perry-linux-x64-musl/-/perry-linux-x64-musl-0.5.1220.tgz#4427bbdb988aef7bdc76eb614e71044cb3598a5f"
+  integrity sha512-OFJLceB+qNlzYTTHl5rK1PaDReNrwxtYJB+xDMf0RKq+MofecKpNjdICHQzKdtO47Guok2bTnTghOTdsHpdR7w==
+
 "@perryts/perry-linux-x64@0.5.1220":
   version "0.5.1220"
   resolved "https://registry.npmjs.org/@perryts/perry-linux-x64/-/perry-linux-x64-0.5.1220.tgz"
   integrity sha512-N8QG2AboPzw3cBdv1pQdFGc75xTpAwUcWIgik4O6WlU3zMIrOHxIaqj8UWZ1XN8nAxCueBjvGGu8CPi856SvPQ==
+
+"@perryts/perry-win32-x64@0.5.1220":
+  version "0.5.1220"
+  resolved "https://registry.yarnpkg.com/@perryts/perry-win32-x64/-/perry-win32-x64-0.5.1220.tgz#7eedd7049c6c731d5bab3e2e3c3f05816e6278be"
+  integrity sha512-p33zkG/s3fMfYgAgtfHTWfjTlmlxxaTYZ/Yhw6HzFtyPeBXxz4DtKdbmwNu95ZgFYVAIknF/Fd2Loym56FeXXg==
 
 "@perryts/perry@^0.5.1220":
   version "0.5.1220"
@@ -190,7 +220,7 @@ acorn-jsx@^5.3.2:
   resolved "https://registry.npmjs.org/acorn-jsx/-/acorn-jsx-5.3.2.tgz"
   integrity sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==
 
-"acorn@^6.0.0 || ^7.0.0 || ^8.0.0", acorn@^8.9.0:
+acorn@^8.9.0:
   version "8.18.0"
   resolved "https://registry.npmjs.org/acorn/-/acorn-8.18.0.tgz"
   integrity sha512-lGq+9yr1/GuAWaVYIHRjvvySG5/4VfKIvC8EWxStPdcDh/Ka7FG3twP6v4d5BkravUilhIAsG4Qj83t02LWUPQ==
@@ -342,7 +372,7 @@ eslint-visitor-keys@^3.4.1, eslint-visitor-keys@^3.4.3:
   resolved "https://registry.npmjs.org/eslint-visitor-keys/-/eslint-visitor-keys-3.4.3.tgz"
   integrity sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag==
 
-"eslint@^6.0.0 || ^7.0.0 || >=8.0.0", eslint@^8.56.0, eslint@^8.57.0, eslint@>=7.0.0:
+eslint@^8.57.0:
   version "8.57.1"
   resolved "https://registry.npmjs.org/eslint/-/eslint-8.57.1.tgz"
   integrity sha512-ypowyDxpVSYpkXr9WPv2PAZCtNip1Mv5KTW0SCurXv/9iOpcrH9PaqUElksqEB6pChqHGDRCFTyrZlGhnLNGiA==
@@ -871,7 +901,7 @@ type-fest@^0.20.2:
   resolved "https://registry.npmjs.org/type-fest/-/type-fest-0.20.2.tgz"
   integrity sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==
 
-typescript@^5.4.0, typescript@>=4.2.0:
+typescript@^5.4.0:
   version "5.9.3"
   resolved "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz"
   integrity sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==

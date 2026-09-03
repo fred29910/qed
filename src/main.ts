@@ -18,8 +18,6 @@ import {
     State,
     VStack,
     onActivate,
-    onAppDidBecomeActive,
-    onAppDidEnterBackground,
     onTerminate,
     type Widget,
 } from 'perry/ui';
@@ -33,8 +31,6 @@ import { registerIpcHandlers } from './ipc/handlers.js';
 import { AppStore } from './state/app-state.js';
 import {
     onAppActivate,
-    onAppBackground,
-    onAppForeground,
     onAppEvent,
     onAppTerminate,
     startApp,
@@ -47,7 +43,6 @@ import { StatusBar } from './ui/status-bar.js';
 import { Toast } from './ui/toast.js';
 import { TitleBar } from './ui/title-bar.js';
 import { applyTheme, getPalette, paintBackground } from './ui/theme.js';
-import { paletteFor } from './app/theme.js';
 
 /* ---------------------------------------------------------------- *
  * Bootstrap.                                                        *
@@ -71,7 +66,6 @@ function main(): void {
 
     // 4. Apply theme to the UI palette so the very first paint uses it.
     applyTheme(store.getState().resolvedTheme);
-    void paletteFor; // kept for future per-palette mutation if needed
 
     // 5. Build the main view (sidebar + routed module + status + toast).
     const mainView = buildMainView(bus, store);
@@ -79,8 +73,6 @@ function main(): void {
     // 6. Lifecycle hooks.
     onActivate(() => onAppActivate());
     onTerminate(() => onAppTerminate(ctx));
-    onAppDidEnterBackground(() => onAppBackground());
-    onAppDidBecomeActive(() => onAppForeground());
 
     // 7. Start the app — installs menu / tray, opens the main window.
     startApp(ctx, mainView);
@@ -131,14 +123,6 @@ function buildMainView(bus: IpcBus, store: AppStore): Widget {
 
     // Title bar reflects the active route.
     const titleBar = TitleBar(titleForRoute(store.getState().route));
-    store.subscribe((s) => {
-        // Re-create the title bar with a new label. Perry's runtime
-        // doesn't expose a `textSetText` for the title bar directly,
-        // so we rely on the fact that the title bar reads its initial
-        // label once. For v1 the title text is informational; the
-        // sidebar highlight is the source of truth.
-        void s.route;
-    });
 
     // Status + toast.
     const status = StatusBar(store);

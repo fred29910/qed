@@ -43,7 +43,7 @@ export class RecentFilesService {
         const path = recentFilesPath();
         try {
             mkdirSync(dirname(path), { recursive: true });
-            writeFileSync(path, JSON.stringify(this.paths, null, 2), 'utf-8');
+            writeFileSync(path, JSON.stringify(this.paths, null, 2));
         } catch (err) {
             console.error('recent-files flush failed:', explainFsError(err));
         }
