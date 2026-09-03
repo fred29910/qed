@@ -3,9 +3,11 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [master]
 
 jobs:
   test:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'master')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +21,7 @@ jobs:
 
   build:
     needs: test
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'master')
     strategy:
       fail-fast: false
       matrix:
