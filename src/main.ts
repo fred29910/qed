@@ -44,6 +44,9 @@ import { Toast } from './ui/toast.js';
 import { TitleBar } from './ui/title-bar.js';
 import { applyTheme, getPalette, paintBackground } from './ui/theme.js';
 import { diag, diagErr } from './diag.js';
+// `diagErr` is intentionally retained: error sites should call it once
+// the app graduates past the skeleton. For now it's exported but unused.
+void diagErr;
 
 /* ---------------------------------------------------------------- *
  * Bootstrap.                                                        *
@@ -89,12 +92,12 @@ function main(): void {
 
     // 5. Build the main view (sidebar + routed module + status + toast).
     diag('building main view');
-    const mainView = buildMainView(bus, store);
+    const mainView = buildMainView(bus, store, shell);
     diag('main view built', { widget: typeof mainView });
 
     // 6. Lifecycle hooks.
     diag('installing lifecycle hooks');
-    onActivate(() => onAppActivate());
+    onActivate(() => onAppActivate(ctx));
     onTerminate(() => onAppTerminate(ctx));
     diag('lifecycle hooks installed');
 
@@ -123,7 +126,7 @@ type Route = 'file-manager' | 'settings' | 'about';
  *     ├─ StatusBar
  *     └─ Toast
  */
-function buildMainView(bus: IpcBus, store: AppStore): Widget {
+function buildMainView(bus: IpcBus, store: AppStore, shell: ShellService): Widget {
     diag('buildMainView: route state');
     // The active route is mirrored in a local State so the perry
     // runtime can diff the children when the user switches tabs.
@@ -144,7 +147,7 @@ function buildMainView(bus: IpcBus, store: AppStore): Widget {
     // expensive, so we only construct it once and re-use.
     const fileManager = FileManagerView(bus, store);
     diag('buildMainView: AboutView');
-    const about = AboutView();
+    const about = AboutView(shell);
 
     diag('buildMainView: Sidebar');
     // Sidebar.

@@ -159,7 +159,7 @@ export class AppStore {
     }
 
     // Used by tests / extensions that want to track *just* the recent list.
-    notifyRecentChanged(): void {
+    refreshRecentFiles(): void {
         const list = this.recentFiles.list();
         this.update({ recentFiles: list });
     }

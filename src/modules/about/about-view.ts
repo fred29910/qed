@@ -10,10 +10,10 @@ import { arch } from 'os';
 import { describeEnvironment } from '../../app/app-controller.js';
 import { Row, Section } from '../../ui/widgets.js';
 import { paintMuted, paintText } from '../../ui/theme.js';
-import { ShellService } from '../../services/shell-service.js';
+import type { ShellService } from '../../services/shell-service.js';
 
 /** Build the About view. */
-export function AboutView(): Widget {
+export function AboutView(shell: ShellService): Widget {
     const env = describeEnvironment();
 
     const title = Text('qed');
@@ -49,10 +49,10 @@ export function AboutView(): Widget {
      * Actions.                                                          *
      * ---------------------------------------------------------------- */
     const openLogBtn = Button('Open log folder', () => {
-        new ShellService().revealInFileManager(env.logDir);
+        shell.revealInFileManager(env.logDir);
     });
     const docsBtn = Button('Perry documentation', () => {
-        new ShellService().openUrl('https://docs.perryts.com/');
+        shell.openUrl('https://docs.perryts.com/');
     });
     const actionRow = HStack(8, [openLogBtn, docsBtn]);
 

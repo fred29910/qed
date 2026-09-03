@@ -30,7 +30,6 @@ import {
 import type { AppCommand } from '../platform/menu-bar.js';
 import { installAppMenu } from '../platform/menu-bar.js';
 import { installTray } from '../platform/tray-adapter.js';
-import { ShellService } from '../services/shell-service.js';
 import { createSettingsWindow } from '../ui/settings-window.js';
 import { resolveTheme, type AppStore } from '../state/app-state.js';
 import type { ControllerContext } from './app-controller-types.js';
@@ -135,13 +134,18 @@ export function startApp(ctx: ControllerContext, body: Widget): void {
         icon: '',
     });
     diag('startApp: App({...}) returned');
-    // Perry's stub does not give us a handle back; we mark "started"
-    // so subsequent commands can no-op gracefully instead of
-    // crashing on a null handle.
+    // @todo(perry-stub): Perry's stub does not give us a Window handle
+    // back from `App({...})`. The placeholder below lets subsequent
+    // commands no-op gracefully instead of crashing on a null handle.
+    // Replace with `mainWindow = returnedWindow` once Perry exposes
+    // a Window return type from `App()`.
     mainWindow = null;
 }
 
 function isStarted(): boolean {
+    // @todo(perry-stub): this is always `false` until Perry returns
+    // a Window handle from `App()`. Tracks the same placeholder as
+    // `mainWindow` above.
     return mainWindow !== null;
 }
 
@@ -195,10 +199,14 @@ export function handleCommand(command: AppCommand): void {
             toggleAlwaysOnTop();
             return;
         case 'help.docs':
-            new ShellService().openUrl('https://docs.perryts.com/');
+            if (activeContext !== null) {
+                activeContext.shell.openUrl('https://docs.perryts.com/');
+            }
             return;
         case 'help.openLogDir':
-            new ShellService().revealInFileManager(logDir());
+            if (activeContext !== null) {
+                activeContext.shell.revealInFileManager(logDir());
+            }
             return;
         default: {
             const _exhaustive: never = command;
@@ -222,7 +230,7 @@ export function navigateTo(route: Route): void {
 export function openSettingsWindow(): void {
     if (activeContext === null) return;
     if (settingsWindow === null) {
-        settingsWindow = createSettingsWindow(activeContext.bus, activeContext.store);
+        settingsWindow = createSettingsWindow(activeContext.bus, activeContext.store, activeContext.shell);
     } else {
         settingsWindow.show();
     }
@@ -294,7 +302,8 @@ function cycleTheme(): void {
  * ---------------------------------------------------------------- */
 
 /** Called when the user re-activates the app. */
-export function onAppActivate(): void {
+export function onAppActivate(_ctx: ControllerContext): void {
+    void _ctx;
     if (mainWindow !== null) {
         mainWindow.show();
     }

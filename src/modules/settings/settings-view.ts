@@ -36,10 +36,10 @@ import { describeEnvironment } from '../../app/app-controller.js';
 import { applyTheme, paintMuted, paintText } from '../../ui/theme.js';
 import { Row, Section } from '../../ui/widgets.js';
 import { enableAutostart, disableAutostart } from '../../platform/index.js';
-import { ShellService } from '../../services/shell-service.js';
+import type { ShellService } from '../../services/shell-service.js';
 
 /** Build the settings view. */
-export function SettingsView(bus: IpcBus, store: AppStore): Widget {
+export function SettingsView(bus: IpcBus, store: AppStore, shell: ShellService): Widget {
     const env = describeEnvironment();
     const cfg = store.getState().config;
 
@@ -113,7 +113,6 @@ export function SettingsView(bus: IpcBus, store: AppStore): Widget {
     /* ---------------------------------------------------------------- *
      * Storage.                                                          *
      * ---------------------------------------------------------------- */
-    const shell = new ShellService();
     const appDataRow = Row(
         'App data',
         HStack(8, [

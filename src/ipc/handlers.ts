@@ -90,21 +90,17 @@ export function registerIpcHandlers(bus: IpcBus, ctx: HandlerContext): void {
 
     bus.register<RecentAddPayload, void>('recent:add', (p) => {
         ctx.recent.add(p.path);
-        ctx.store.notifyRecentChanged();
+        ctx.store.refreshRecentFiles();
     });
     bus.register<undefined, RecentList>('recent:list', () => ctx.recent.list());
     bus.register<undefined, void>('recent:clear', () => {
         ctx.recent.clear();
-        ctx.store.notifyRecentChanged();
+        ctx.store.refreshRecentFiles();
     });
 }
 
-function buildPlatformInfo(_ctx: HandlerContext): PlatformInfo {
-    // We deliberately use a parameter-prefixed underscore on unused ctx
-    // so the function stays open to future handlers that need it
-    // (e.g. "config not yet loaded" check).
-    void _ctx;
-    const cfg = _ctx.config.snapshot();
+function buildPlatformInfo(ctx: HandlerContext): PlatformInfo {
+    const cfg = ctx.config.snapshot();
     return {
         host: platformLabel(),
         platformLabel: platformLabel(),

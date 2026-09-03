@@ -13,6 +13,25 @@
  *   b = 0xff / 255
  *
  * Keep the palette frozen so callers can't mutate it accidentally.
+ *
+ * ──────────────────────────────────────────────────────────────────
+ * Why is this file in `src/app/` rather than `src/ui/`?
+ * ──────────────────────────────────────────────────────────────────
+ * The palette is split across two files on purpose:
+ *
+ *   - `src/app/theme.ts` (this file) — pure type + frozen constants.
+ *     Does NOT import `perry/ui`. Tests can import the palette
+ *     without dragging in the whole UI layer.
+ *   - `src/ui/theme.ts` — re-exports the symbols above and adds the
+ *     imperative `applyTheme()` / `paint*()` helpers that talk to
+ *     `perry/ui`.
+ *
+ * The two files together are "one layer split across two packages"
+ * so the test seam stays clean. Don't move the constants into
+ * `ui/theme.ts`; doing so pulls `perry/ui` into every consumer.
+ *
+ * NOTE: This file depends only on `state/app-state.ts` for the
+ * `ResolvedTheme` *type*. It does not import the controller.
  */
 import type { ResolvedTheme } from '../state/app-state.js';
 

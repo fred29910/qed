@@ -31,8 +31,18 @@ export type IpcHandlerMap = {
     [K in IpcChannel]?: IpcHandler<unknown, unknown>;
 };
 
+/**
+ * Default handler timeout in milliseconds. Handlers that take longer
+ * than this will reject with a `timeout` message rather than hang
+ * the UI. Per-call override via `send(channel, payload, { timeoutMs })`.
+ */
 const DEFAULT_TIMEOUT_MS = 5000;
-void DEFAULT_TIMEOUT_MS;
+
+/** Optional overrides for a single send. */
+export interface SendOptions {
+    /** Timeout in milliseconds. Defaults to 5000. Pass `0` to disable. */
+    readonly timeoutMs?: number;
+}
 
 export class IpcBus {
     private readonly handlers: Map<IpcChannel, IpcHandler<unknown, unknown>> = new Map();
@@ -50,7 +60,11 @@ export class IpcBus {
      * string from the handler (or a timeout message). UI code can
      * catch and toast the message directly.
      */
-    async send<TPayload, TResult>(channel: IpcChannel, payload: TPayload): Promise<TResult> {
+    async send<TPayload, TResult>(
+        channel: IpcChannel,
+        payload: TPayload,
+        options?: SendOptions,
+    ): Promise<TResult> {
         const handler = this.handlers.get(channel);
         if (handler === undefined) {
             throw new Error(`no handler registered for channel "${channel}"`);
@@ -61,13 +75,7 @@ export class IpcBus {
         // handler today.
         const request: IpcRequest<TPayload> = { id, channel, payload, ts: Date.now() };
         void request;
-        let response: IpcResponse<TResult>;
-        try {
-            const value = await Promise.resolve().then(() => handler(payload));
-            response = { id, ok: true, value: value as TResult };
-        } catch (err) {
-            response = { id, ok: false, message: explainFsError(err) };
-        }
+        const response = await this.invokeWithTimeout(id, channel, handler, payload, options);
         if (!response.ok) {
             throw new Error((response as IpcErr).message);
         }
@@ -79,17 +87,61 @@ export class IpcBus {
      * error). Useful when the caller wants to *display* the error
      * rather than throw.
      */
-    async call<TPayload, TResult>(channel: IpcChannel, payload: TPayload): Promise<IpcResponse<TResult>> {
+    async call<TPayload, TResult>(
+        channel: IpcChannel,
+        payload: TPayload,
+        options?: SendOptions,
+    ): Promise<IpcResponse<TResult>> {
         const handler = this.handlers.get(channel);
         if (handler === undefined) {
             return { id: this.makeId(), ok: false, message: `no handler for ${channel}` };
         }
         const id = this.makeId();
+        // The handler map stores `IpcHandler<unknown, unknown>` for
+        // erasure; the cast below restores the call-site types. Channel
+        // registration is validated by `IpcHandlerMap`, which maps every
+        // `IpcChannel` to the right typed handler.
+        const typed = handler as IpcHandler<TPayload, TResult>;
+        return this.invokeWithTimeout<TPayload, TResult>(id, channel, typed, payload, options);
+    }
+
+    /**
+     * Run a handler under a timeout race. Returns an envelope that
+     * either succeeds or carries an error message (timeout / handler
+     * exception).
+     */
+    private async invokeWithTimeout<TPayload, TResult>(
+        id: IpcId,
+        channel: IpcChannel,
+        handler: IpcHandler<TPayload, TResult>,
+        payload: TPayload,
+        options?: SendOptions,
+    ): Promise<IpcResponse<TResult>> {
+        const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+        const work = Promise.resolve().then(() => handler(payload));
+        if (timeoutMs <= 0) {
+            try {
+                const value = await work;
+                return { id, ok: true, value: value as TResult };
+            } catch (err) {
+                return { id, ok: false, message: explainFsError(err) };
+            }
+        }
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(() => {
+                reject(new Error(`timeout after ${timeoutMs}ms on channel "${channel}"`));
+            }, timeoutMs);
+        });
         try {
-            const value = await Promise.resolve().then(() => handler(payload));
+            const value = await Promise.race([work, timeout]);
             return { id, ok: true, value: value as TResult };
         } catch (err) {
             return { id, ok: false, message: explainFsError(err) };
+        } finally {
+            if (timer !== undefined) {
+                clearTimeout(timer);
+            }
         }
     }
 
