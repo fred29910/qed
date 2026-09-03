@@ -182,6 +182,15 @@ function mergeWithDefaults(raw: Record<string, unknown>): AppConfig {
             (merged as { logLevel: LogLevel }).logLevel = lvl as LogLevel;
         }
     }
+    if (typeof raw['maximized'] === 'boolean') {
+        (merged as { maximized: boolean }).maximized = raw['maximized'];
+    }
+    if (typeof raw['windowWidth'] === 'number' && Number.isFinite(raw['windowWidth']) && raw['windowWidth'] > 0) {
+        (merged as { windowWidth: number }).windowWidth = Math.round(raw['windowWidth']);
+    }
+    if (typeof raw['windowHeight'] === 'number' && Number.isFinite(raw['windowHeight']) && raw['windowHeight'] > 0) {
+        (merged as { windowHeight: number }).windowHeight = Math.round(raw['windowHeight']);
+    }
     return merged;
 }
 
@@ -213,5 +222,8 @@ function cloneConfig(c: AppConfig): AppConfig {
         fontSize: c.fontSize,
         displayName: c.displayName,
         logLevel: c.logLevel,
+        maximized: c.maximized,
+        windowWidth: c.windowWidth,
+        windowHeight: c.windowHeight,
     };
 }

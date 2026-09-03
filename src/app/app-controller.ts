@@ -139,11 +139,17 @@ export function startApp(ctx: ControllerContext, body: Widget): void {
     // internally and tracked via the controller's `mainWindow`
     // state. We only need a handle for the rare commands that
     // hide / close the main window.
+    const cfg = ctx.config.snapshot();
+    const w = cfg.windowWidth > 0 ? cfg.windowWidth : 1100;
+    const h = cfg.windowHeight > 0 ? cfg.windowHeight : 720;
+    const maximized = cfg.maximized;
+
     diag('startApp: calling App({...}) (enters perry-ui run loop)');
     App({
         title: 'qed',
-        width: 1100,
-        height: 720,
+        width: w,
+        height: h,
+        windowState: maximized ? 'maximized' : 'normal',
         body,
         icon: '',
     });

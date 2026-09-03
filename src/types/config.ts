@@ -32,6 +32,12 @@ export interface AppConfig {
      * every entry; `trace` is the most verbose. Default `info`.
      */
     readonly logLevel: LogLevel;
+    /** Whether the app should start maximized (default true). */
+    readonly maximized: boolean;
+    /** Remembered main window width from last session. */
+    readonly windowWidth: number;
+    /** Remembered main window height from last session. */
+    readonly windowHeight: number;
 }
 
 /** Default config. Used when no file is present or the file is corrupt. */
@@ -45,4 +51,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     fontSize: 13,
     displayName: '',
     logLevel: 'info',
+    maximized: true,
+    windowWidth: 1100,
+    windowHeight: 720,
 };
