@@ -14,6 +14,7 @@ import { Button, Divider, State, Text, VStack, type Widget } from 'perry/ui';
 import { navigateTo, onAppEvent, type Route } from '../app/app-controller.js';
 import type { AppStore } from '../state/app-state.js';
 import { getPalette, paintAccent, paintMuted, paintText } from './theme.js';
+import { diag } from '../diag.js';
 
 /* ---------------------------------------------------------------- *
  * Public surface.                                                   *
@@ -28,19 +29,32 @@ export interface SidebarHandle {
 
 /** Build the sidebar. Returns a handle with a `bind(store)` hook. */
 export function Sidebar(initial: Route): SidebarHandle {
+    diag('Sidebar: entered', { initial });
     const activeRoute = State<Route>(initial);
-    const recent = State<readonly string[]>([]);
+    diag('Sidebar: activeRoute State created');
+    // Perry's State<T> with array/object types may not initialise the
+    // `.value` getter under AOT compilation. Until that is fixed, the
+    // recent-files list is held in a plain mutable array — the bind()
+    // hook keeps it in sync with the store, and the widget tree
+    // rebuild (when reactive refresh lands) will pick up the new
+    // values.
+    let recent: string[] = [];
+    diag('Sidebar: recent placeholder created');
 
     // Route buttons. We re-render the whole sidebar on change; the
     // widget count is tiny so this is fine.
     function build(): Widget {
+        diag('Sidebar.build: ROUTES.map start', { routes: ROUTES.length });
         const items: Widget[] = ROUTES.map((r) => {
+            diag('Sidebar.build: route iteration', { id: r.id, icon: r.icon, label: r.label });
             const isActive = activeRoute.value === r.id;
             const label = `${r.icon}  ${r.label}`;
+            diag('Sidebar.build: about to call Button');
             const b = Button(label, () => {
                 activeRoute.set(r.id);
                 navigateTo(r.id);
             });
+            diag('Sidebar.build: Button returned', { type: typeof b });
             if (isActive) {
                 paintAccent(b);
             } else {
@@ -50,19 +64,23 @@ export function Sidebar(initial: Route): SidebarHandle {
         });
 
         // Recent files section.
+        diag('Sidebar.build: Text("Recent")');
         const recentsHeader = Text('Recent');
         paintMuted(recentsHeader);
-        const recentItems: Widget[] = recent.value.slice(0, 8).map((p) => {
+        diag('Sidebar.build: about to recent.slice', { recentLen: recent.length });
+        const recentItems: Widget[] = recent.slice(0, 8).map((p) => {
             const t = Text(p);
             paintText(t);
             return t;
         });
+        diag('Sidebar.build: recent items', { count: recentItems.length });
         if (recentItems.length === 0) {
             const empty = Text('(no recent files)');
             paintMuted(empty);
             recentItems.push(empty);
         }
 
+        diag('Sidebar.build: return VStack');
         return VStack(8, [VStack(4, items), Divider(), recentsHeader, VStack(2, recentItems)]);
     }
 
@@ -83,14 +101,14 @@ export function Sidebar(initial: Route): SidebarHandle {
     function bind(store: AppStore): () => void {
         // Initial sync.
         activeRoute.set(store.getState().route);
-        recent.set(store.getState().recentFiles);
+        recent = [...store.getState().recentFiles];
 
         const unsubStore = store.subscribe((s) => {
             if (s.route !== activeRoute.value) {
                 activeRoute.set(s.route);
             }
-            if (s.recentFiles !== recent.value) {
-                recent.set(s.recentFiles);
+            if (s.recentFiles !== recent) {
+                recent = [...s.recentFiles];
             }
         });
         const unsubEvents = onAppEvent((e) => {

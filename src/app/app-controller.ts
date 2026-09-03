@@ -35,6 +35,7 @@ import { createSettingsWindow } from '../ui/settings-window.js';
 import { resolveTheme, type AppStore } from '../state/app-state.js';
 import type { ControllerContext } from './app-controller-types.js';
 import type { AppEvent, AppEventListener } from './app-controller-types.js';
+import { diag } from '../diag.js';
 
 /* ---------------------------------------------------------------- *
  * Internal state.                                                   *
@@ -106,19 +107,26 @@ function emitFileManagerIntent(intent: FileManagerIntent): void {
  * registered, with the body widget that the main view returns.
  */
 export function startApp(ctx: ControllerContext, body: Widget): void {
+    diag('startApp: entered');
     activeContext = ctx;
+    diag('startApp: applyAutostartFromConfig');
     applyAutostartFromConfig(ctx);
     backgroundModeEnabled = ctx.config.snapshot().backgroundMode;
+    diag('startApp: backgroundMode read');
 
+    diag('startApp: installAppMenu');
     installAppMenu(handleCommand);
+    diag('startApp: menu installed');
     const tray = installTray(handleCommand, 'qed — Cross-platform desktop skeleton');
     trayHandle = tray.widget;
+    diag('startApp: tray installed');
 
     // The main window is special: it owns the run loop.
     // Perry's `App({...})` returns void; the window is created
     // internally and tracked via the controller's `mainWindow`
     // state. We only need a handle for the rare commands that
     // hide / close the main window.
+    diag('startApp: calling App({...}) (enters perry-ui run loop)');
     App({
         title: 'qed',
         width: 1100,
@@ -126,6 +134,7 @@ export function startApp(ctx: ControllerContext, body: Widget): void {
         body,
         icon: '',
     });
+    diag('startApp: App({...}) returned');
     // Perry's stub does not give us a handle back; we mark "started"
     // so subsequent commands can no-op gracefully instead of
     // crashing on a null handle.
