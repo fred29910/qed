@@ -1,9 +1,11 @@
 # Perry build outputs
 dist/
 *.o
+bin/
 
 # Generated type stubs (regenerate with `perry types`)
 .perry/types/
+src/.perry/ 
 
 # Node modules
 node_modules/
@@ -11,3 +13,4 @@ node_modules/
 # IDE
 .vscode/
 .idea/
+.omo

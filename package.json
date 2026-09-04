@@ -1,12 +1,48 @@
 {
   "name": "qed",
   "version": "0.1.0",
+  "description": "Cross-platform desktop application skeleton built with the Perry TypeScript AOT compiler.",
   "private": true,
+  "type": "module",
   "main": "src/main.ts",
   "scripts": {
-    "build": "npx  @perryts/perry compile src/main.ts -o bin/qed"
+    "dev": "perry dev src/main.ts",
+    "check": "perry check src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "format": "prettier --write \"src/**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json,md}\"",
+    "build": "mkdir -p bin && perry compile src/main.ts -o bin/qed",
+    "build:windows": "bash scripts/build-windows.sh",
+    "build:mac": "bash scripts/build-mac.sh",
+    "build:linux": "bash scripts/build-linux.sh",
+    "build:all": "bash scripts/build-all.sh",
+    "package:mac": "bash scripts/package-mac.sh",
+    "package:linux": "bash scripts/package-linux.sh",
+    "package:windows": "bash scripts/package-windows.sh"
   },
+  "keywords": [
+    "perry",
+    "perryts",
+    "desktop",
+    "cross-platform"
+  ],
+  "license": "MIT",
   "perry": {
-    "compilePackages": []
+    "compilePackages": [],
+    "allow": {
+      "compilePackages": []
+    }
+  },
+  "devDependencies": {
+    "@perryts/perry": "^0.5.1220",
+    "@types/node": "^26.4.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.0"
   }
 }

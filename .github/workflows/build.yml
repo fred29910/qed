@@ -1,0 +1,59 @@
+name: build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+
+  build:
+    needs: test
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'master')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Set up Perry toolchain
+        run: npx --yes @perryts/perry setup --host ${{ matrix.os }}
+      - name: Build
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+              bash scripts/build-windows.sh
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+              bash scripts/build-mac.sh
+          else
+              bash scripts/build-linux.sh
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qed-${{ matrix.os }}
+          path: |
+            bin/qed
+            bin/qed.exe
+            bin/qed.app
+            bin/qed.AppImage
+            bin/qed.deb
+            bin/qed.dmg
+            bin/qed.msi
+          if-no-files-found: ignore
