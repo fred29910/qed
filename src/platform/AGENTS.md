@@ -1,6 +1,6 @@
 # src/platform/ — OS Abstraction Layer
 
-**Generated:** 2026-09-03  Parent: ./AGENTS.md  Commit: 1818999
+**Generated:** 2026-09-04  Parent: ./AGENTS.md  Commit: 2966a60
 
 ## OVERVIEW
 Cross-platform host adaptation: tray icon + context menu, app menu bar with keyboard shortcuts, "launch at login" (autostart), path resolution for app data / cache / logs, and filesystem permission probes. 6 modules + barrel index. Every OS-specific detail lives here so the rest of the app never touches native APIs.
@@ -8,7 +8,7 @@ Cross-platform host adaptation: tray icon + context menu, app menu bar with keyb
 ## STRUCTURE
 ```
 platform/
-├── index.ts              # barrel — re-exports platform/paths/fs-permissions ONLY (NOT tray/menu/autostart — those are imported directly)
+├── index.ts              # barrel — re-exports ALL 6 submodules (see code-vs-doc drift note below)
 ├── platform.ts           # HostKind, isMacOS/Windows/Linux, platformLabel()
 ├── paths.ts              # appDataDir, cacheDir, logDir, configFilePath, autostartManifestPath, readEnv
 ├── fs-permissions.ts     # checkFsAccess, explainFsError
@@ -17,7 +17,12 @@ platform/
 └── tray-adapter.ts       # installTray, TrayHandle
 ```
 
-**Non-obvious:** The barrel `index.ts` does NOT re-export `tray-adapter`, `menu-bar`, or `autostart`. Those must be imported by direct path (`'../platform/menu-bar.js'`).
+**Code-vs-doc drift (verified 2026-09-04):** `index.ts` actually does `export *` from
+all 6 submodules (`./platform.js` … `./tray-adapter.js`), despite this file's
+earlier claim that the barrel excludes `tray-adapter`/`menu-bar`/`autostart`.
+No caller imports those three through the barrel — they're imported by direct
+path — so the *intent* is right and the barrel is over-broad. Either narrow
+`index.ts` to the documented scope, or fix this doc.
 
 ## WHERE TO LOOK
 
@@ -36,7 +41,7 @@ platform/
 
 ## CONVENTIONS
 
-- **Barrel import for capability providers.** Other modules import `platform/paths`, `platform/fs-permissions`, `platform/platform` from `../platform/index.js`. `tray-adapter`, `menu-bar`, and `autostart` are imported by direct path because the barrel excludes them.
+- **Barrel import for capability providers.** Other modules import `platform/paths`, `platform/fs-permissions`, `platform/platform` from `../platform/index.js`. `tray-adapter`, `menu-bar`, and `autostart` are imported by direct path in practice (see code-vs-doc drift note) — keep it that way even if the barrel is narrowed later.
 - **No native API leaks.** Never import `perry/ui` tray/menu APIs from `app/` or `modules/`. All native calls go through the adapters here (`tray-adapter.ts`, `menu-bar.ts`).
 - **AppCommand is the single command union.** Every menu item, tray action, and keyboard shortcut maps to an `AppCommand` literal. Adding a command means: (1) add to the union in `menu-bar.ts`, (2) handle it in `app-controller.ts`, (3) wire the menu item.
 - **`__platform__` is a Perry compile-time constant.** `platform.ts` reads it once; all branches using `isMacOS()` / `getHostKind()` are dead-code eliminated by the AOT compiler.

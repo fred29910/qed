@@ -1,6 +1,27 @@
 # PROJECT KNOWLEDGE BASE — qed
 
-**Generated:** 2026-09-03  Branch: feat/ui/v1  Commit: 1818999
+**Generated:** 2026-09-04  Branch: feat/ui/v1  Commit: 2966a60
+
+## AGENTS.md LOCATIONS (scored 2026-09-04)
+
+Scored on file count (3x), subdir (2x), code ratio (2x), module boundary (2x), symbol/export density (LSP/codegraph, 2-3x), reference centrality (3x). Root always; >15 always; 8-15 if distinct domain; <8 skip.
+
+| Path | Score | Action | Note |
+|---|---|---|---|
+| `.` (root) | — | ALWAYS | 174 lines, full treatment |
+| `src/app/` | 14 | update | Controller (startApp, handleCommand) |
+| `src/ui/` | 15 | update | 8 flat widget files, no index |
+| `src/services/` | 16 | update | 7 files, only fs seam |
+| `src/platform/` | 16 | update | 8 files, OS abstraction |
+| `src/modules/diagnostics/` | 12 | update | NEW (1818999), log viewer |
+| `src/modules/file-manager/` | 11 | keep | Sidebar route |
+| `src/types/` | 12 | keep | Config v2 + IPC envelopes |
+| `src/state/` | 9 | keep | AppStore single source |
+| `src/ipc/` | 8 | keep | Bus + 17 handlers |
+| `src/modules/settings/` | 10 | keep | Preferences + Advanced |
+| `src/modules/about/` | 7 | keep | Read-only, 3 files |
+
+Project: 75 files, 9163 lines (ts/js/md), 1 file >500 lines (`diag.ts` 454 lines — documented cross-cutting exception), max depth 3. Monorepo: no. Multi-language: TS + shell only.
 
 ## OVERVIEW
 Cross-platform desktop skeleton (Perry TypeScript AOT → native `.exe`/`.app`/`.AppImage`). No Electron/Tauri/Qt. Same `src/` produces Windows/macOS/Linux binaries via `perry compile`. ~5k lines of TS, max depth 5, ~80 source files.
@@ -21,10 +42,10 @@ qed/
 │   ├── app-controller-types.ts     # ControllerContext, AppEvent, AppEventListener, KnownAppCommand (alias)
 │   └── theme.ts                    # LIGHT/DARK palettes, paletteFor() — split from ui/theme.ts for testability
 ├── src/modules/                    # feature modules (each with index.ts boundary)
-│   ├── file-manager/ (3)           # view + operations + index — sidebar route
+│   ├── file-manager/ (4)           # view + operations + index + AGENTS.md — sidebar route
 │   ├── settings/     (3)           # view + changes + index — sidebar route, Advanced/logging section
 │   ├── about/        (2)           # view + index — sidebar route
-│   └── diagnostics/  (4)           # NEW (1818999) — view + window + index + AGENTS.md; NOT a sidebar route
+│   └── diagnostics/  (3)           # NEW (1818999) — view + window + index + AGENTS.md; NOT a sidebar route
 ├── src/services/                   # barrel (5 exports: config/file/notification/shell/recent-files) — only `fs` seam (besides diag.ts)
 ├── src/types/                      # barrel: config.ts (AppConfig v2) + ipc.ts (IpcChannel union + payload types)
 ├── src/ipc/                        # bus.ts (IpcBus interface) + handlers.ts (17 channels, trace() wrapper)
@@ -41,7 +62,9 @@ qed/
 └── perry.toml / package.json / tsconfig.json / .eslintrc.json / .prettierrc.json
 ```
 
-**Non-obvious:** `src/app/` has NO `index.ts` (controller is imported directly by `main.ts`); `src/ui/` has NO index (widgets imported selectively); module boundaries are `index.ts` inside each `src/modules/*/`; `.agents/skills/perry-dev` is a self-contained reference module — don't edit for the app, only read for AOT constraints. `src/diag.ts` lives at `src/` root (not in `src/services/`) because it's cross-cutting infra, not a business service.
+**Non-obvious:** `src/app/` has NO `index.ts` (controller is imported directly by `main.ts`); `src/ui/` has NO index (widgets imported selectively); `src/ipc/` and `src/state/` have NO index (flat, single-purpose dirs); module boundaries are `index.ts` inside each `src/modules/*/`; `.agents/skills/perry-dev` is a self-contained reference module — don't edit for the app, only read for AOT constraints. `src/diag.ts` lives at `src/` root (not in `src/services/`) because it's cross-cutting infra, not a business service.
+
+**Code-vs-doc drift (verified 2026-09-04):** `src/platform/index.ts` re-exports **all 6** submodules (`export * from './platform.js' … './tray-adapter.js'`), but `src/platform/AGENTS.md` claims the barrel excludes `tray-adapter`/`menu-bar`/`autostart`. No caller actually imports those three through the barrel — they're imported by direct path — so the doc's *intent* is right and the barrel is over-broad. Fix `index.ts` to match the documented scope, or fix the doc.
 
 ## WHERE TO LOOK
 
@@ -70,8 +93,10 @@ qed/
 | `view.openDiagnostics` | AppCommand | `src/platform/menu-bar.ts:51` | Wired in macOS + desktop menus (lines 127, 170) | Single command that opens the diagnostics window. Add new commands here + handle in `app-controller.ts` (TypeScript exhaustiveness check). |
 | `Logger` / `logger` | interface / singleton | `src/diag.ts` (454 lines) | Imported by `main.ts`, `app-controller.ts`, `handlers.ts`, `app-state.ts`, `settings-view.ts`, `about-view.ts`, `diagnostics-view.ts` | Leveled logger. `setLevel()`, `flush()`, `snapshot()` (ring buffer 500), `currentFilePath()`. The only `fs` consumer outside `services/`. |
 | `FileManagerView` | function | `src/modules/file-manager/file-manager-view.ts` | Feature entry (imported by module index) | Builds the sidebar file-manager widget; uses `State<T>` reactive primitives from `perry/ui`. |
-| `DiagnosticsView` / `createDiagnosticsWindow` | functions | `src/modules/diagnostics/` | Imported by `app-controller.ts` (lazy open) | In-app log viewer: ring-buffer list (RENDER_PAGE=100, "Load more" 200/page), 3 filters (level/category/text). Window is plain `Window()` — NOT always-on-top. |
+| `DiagnosticsView` / `createDiagnosticsWindow` | functions | `src/modules/diagnostics/diagnostics-view.ts` + `diagnostics-window.ts` | Imported by `app-controller.ts` (lazy open) | In-app log viewer: ring-buffer list (RENDER_PAGE=100, "Load more" 200/page), 3 filters (level/category/text). Window is plain `Window()` — NOT always-on-top. |
 | `IpcBus` | interface | `src/ipc/bus.ts` | Central (used by services, modules, ui) | Message bus; payloads typed in `src/types/ipc.ts`. 17 channels including `log:snapshot`, `log:current-file-path`, `view:open-diagnostics`. |
+| `AppStore` methods | methods | `src/state/app-state.ts` | 19 callers | `setRoute`, `setError`, `clearError`, `setBusy`, `refreshTheme`, `subscribe`, `getState`, `dispose`. Pub-sub; listeners must not throw. |
+| `resolveTheme` / `describePlatform` | functions | `src/state/app-state.ts` | 19 callers / about-view | Pure helpers exposed for tests. `resolveTheme('system')` reads `isDarkMode()` from `perry/system`. |
 | `ConfigService` / `FileService` / `ShellService` / `NotificationService` / `RecentFilesService` | classes | `src/services/*.ts` (5 exports via index) | Cross-cutting; all modules import via barrel | Service layer — config persistence, file I/O through bus, notifications (gated), shell open, recent-files list. |
 | `AppCommand` / `KnownAppCommand` | union / alias | `src/platform/menu-bar.ts` + `app-controller-types.ts:18` | Menu + controller + keyboard shortcuts | Exhaustive union (20 members incl. `view.openDiagnostics`). `KnownAppCommand` is a trivial `type KnownAppCommand = AppCommand` alias. |
 
@@ -106,7 +131,7 @@ qed/
 
 **Project-specific rules:**
 - **Never import `fs` directly in source** — only `src/services/`, `src/platform/fs-permissions.ts`, `src/platform/autostart.ts`, and `src/diag.ts` may. All file operations in `app/`, `modules/`, `ui/`, `ipc/` go through `IpcBus` and `FileService`. The `diag.ts` exception is documented (cross-cutting logging infra, not a business service).
-- **Never swallow errors silently** (`fs-permissions.ts` / `plan_ui_v1.md`). Always propagate to caller or log via `logger.error` (the only allowed log seam — `console.*` is banned; 12 sites migrated to `logger.error` in 1818999).
+- **Never swallow errors silently** (`fs-permissions.ts` / `plan_ui_v1.md`). Always propagate to caller or log via `logger.error` (the only allowed log seam — `console.*` is banned; 11 sites migrated to `logger.error` in 1818999, zero `console.*` calls remain in `src/`).
 - **Never write to read-only directories** (appDataDir / cacheDir / logDir must be checked via `fs-permissions` before write).
 - **Bus never throws** (contract `plan_ui_v1.md:515`). Errors in handlers must return error payloads; never throw across `bus.send()`.
 - **No placeholders / TODOs / HACK / FIXME** (explicitly banned in `settings-view.ts`, `plan_ui_v1.md`). If needed, use a comment describing the limitation — don't leave a TODO.
@@ -158,8 +183,8 @@ Prerequisites for build (from README): Node 20 LTS; `npm install -g @perryts/per
 ## NOTES / GOTCHAS
 
 - **No tests** — `package.json` has no `test` script; `.github/workflows/build.yml` only runs `format:check`. If adding tests, pick a framework not used elsewhere (project is untested); consider not blocking CI on them.
-- **AOT constraints break dynamic patterns:** `import()` with variable path, `eval`, `new Function()`, `require` at compile time — all fail `perry compile`. Static analysis required.
-- **Module cycle risk:** `app-controller.ts` imports `platform/` (tray/menu); `platform/menu-bar.ts` imports `app-controller-types.ts`; `modules/file-manager/` imports `ipc/bus` + `state/app-state` + `types/`. `src/diag.ts` is now cross-cutting (imported by 7 sites: `main.ts`, `app-controller.ts`, `handlers.ts`, `app-state.ts`, `settings-view.ts`, `about-view.ts`, `diagnostics-view.ts`). Keep imports unidirectional (controller → services → modules → ipc; never module → controller).
+- **AOT constraints break dynamic patterns:** `import()` with variable path, `eval`, `new Function()`, `require` at compile time — Perry's default policy is *defer*: the site compiles to a value that throws a descriptive `Error` only if reached, and prints an end-of-compile notice listing degraded sites. Opt into hard rejection with `perry compile --strict-eval` / `--strict-dynamic-import`, or `"perry": { "eval": "error" }` in `package.json`. Static analysis still required.
+- **Module cycle risk:** `app-controller.ts` imports `platform/` (tray/menu); `platform/menu-bar.ts` imports `app-controller-types.ts`; `modules/file-manager/` imports `ipc/bus` + `state/app-state` + `types/`. `src/diag.ts` is now cross-cutting (imported by 10 sites: `main.ts`, `app-controller.ts`, `handlers.ts`, `app-state.ts`, `sidebar.ts`, `settings-view.ts`, `about-view.ts`, `diagnostics-view.ts`, plus 3 service files + 2 type-only imports). Keep imports unidirectional (controller → services → modules → ipc; never module → controller).
 - **UI theme and store must stay in sync:** `AppStore` holds theme; `resolveTheme()` reads it; `settings-view.ts` writes it. If changing theme logic, update both `state/app-state.ts` and `ui/theme.ts` + `ui/settings-window.ts` + `modules/settings/settings-view.ts`.
 - **Logger reachability is dual:** In-app viewer reachable via (1) View menu → "Open Log Viewer" (`AppCommand 'view.openDiagnostics'`), (2) Settings → Advanced → "Open log viewer" button (fires `view:open-diagnostics` IPC), (3) About → "Open log folder" (reveals the log directory in OS file manager, NOT the viewer window).
 - **Cross-platform build differences:** macOS uses `bundle_id`, notarize, `.app`; Linux uses `AppImage`, `.deb`, `category=Development`; Windows uses `.exe` + `.msi` via post-build script (Perry doesn't emit `.msi` directly — must run `msi-pack.ps1` after compile).

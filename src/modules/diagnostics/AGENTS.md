@@ -1,6 +1,6 @@
 # diagnostics — In-App Log Viewer
 
-**Generated:** 2026-09-03  Parent: ./AGENTS.md  Commit: 1818999
+**Generated:** 2026-09-04  Parent: ./AGENTS.md  Commit: 2966a60
 
 ## OVERVIEW
 
@@ -24,7 +24,7 @@ diagnostics/
 
 | Task | File | Notes |
 |---|---|---|
-| Add a new filter dimension | `diagnostics-view.ts` | 2 filters today: level (6 levels) + category (from snapshot). Text filter noted as follow-up at line 91-93. |
+| Add a new filter dimension | `diagnostics-view.ts` | 3 filters today: level (6 levels), category (from snapshot), and text (free-text substring). |
 | Change window size / title | `diagnostics-window.ts` | Currently 900x600. Plain `Window()` — NOT always-on-top. |
 | Pagination tuning | `diagnostics-view.ts` | `RENDER_PAGE=100`, `PAGE_INCREMENT=200`, `RING_BUFFER_CAP=500` constants at top. |
 | Expose a new entry point | `index.ts` | Add to re-export list. |

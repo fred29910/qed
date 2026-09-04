@@ -1,6 +1,6 @@
 # src/ipc/ — In-Process Message Bus
 
-**Generated:** 2026-09-03  Parent: ./AGENTS.md  Commit: 1818999
+**Generated:** 2026-09-04  Parent: ./AGENTS.md  Commit: 2966a60
 
 ## OVERVIEW
 

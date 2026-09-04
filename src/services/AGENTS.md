@@ -1,6 +1,6 @@
 # src/services/
 
-**Generated:** 2026-09-03  Parent: ./AGENTS.md  Commit: 1818999
+**Generated:** 2026-09-04  Parent: ./AGENTS.md  Commit: 2966a60
 
 Cross-cutting service layer. Five classes exported through a single
 barrel `index.ts`. This directory is the **only** place in `src/`

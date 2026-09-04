@@ -1,5 +1,5 @@
 # file-manager
-**Generated:** 2026-09-03  Parent: ./AGENTS.md  Commit: 1818999
+**Generated:** 2026-09-04  Parent: ./AGENTS.md  Commit: 2966a60
 
 ## OVERVIEW
 Sidebar file-manager: directory listing, preview, CRUD. All FS access
@@ -12,6 +12,7 @@ index.ts              Module boundary: re-exports view + operations.
 file-manager-view.ts  Sidebar widget (path bar, toolbar, listing, preview).
 file-operations.ts    IPC wrappers: refresh, enterDirectory, stat, createFolder, createFile,
                       rename, deleteEntry, readText, revealInFinder, pushRecent.
+AGENTS.md             This file.
 ```
 
 ## WHERE TO LOOK

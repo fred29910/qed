@@ -1,6 +1,6 @@
 # src/app/ — Controller Layer
 
-**Generated:** 2026-09-03  Parent: ./AGENTS.md  Commit: 1818999
+**Generated:** 2026-09-04  Parent: ./AGENTS.md  Commit: 2966a60
 
 ## OVERVIEW
 Central dispatcher for the entire app. Routes menu picks, tray clicks, keyboard shortcuts, and button presses through a single `handleCommand()` entry. Owns `ControllerContext` (the service bag), `AppEvent` (internal pub/sub), and `AppCommand` (the exhaustive union). Three files, no index.
